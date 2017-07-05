@@ -1,9 +1,11 @@
 import numpy as np
 
 #need both unfortunately
-import pyfits
+import sys; sys.path.append("/home/a/apc34/")
+
 import fitsio
 
+from astropy.io import fits
 from os.path import join, exists
 from os import makedirs
 
@@ -42,7 +44,7 @@ def reduce_sci(files, bias, flat, verbose=False):
     flat = fitsio.read(flatl) 
 
     for file_ in files:
-        f = pyfits.open(file_)
+        f = fits.open(file_)
         f[0].data = (f[0].data - bias)/flat
         f.writeto(file_.replace('SH', 'rSH')) 
         if verbose: print file_ + " done." 

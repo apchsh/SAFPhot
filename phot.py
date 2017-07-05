@@ -2,11 +2,13 @@
 # ======== PHOTOMETRY SCRIPT FOR SAAO DATA BASED ON THE SEP LIBRARY ========= #
 ###############################################################################
 
+import sys; sys.path.append("/home/a/apc34/")
 import fitsio
 import sep
 import numpy as np
 import matplotlib.pyplot as plt 
 
+from os import path
 from scipy.signal import correlate2d, correlate, fftconvolve
 from glob import glob 
 
@@ -127,20 +129,22 @@ def star_loc_plot(data, count, x, y, ind):
     plt.savefig("image%i.png" % count, bbox_inches="tight")
     plt.close('all')
 
-if __name__ == "__main__":
+def run_phot(dir_, name):
 
     #Final variable to store flux
     flux_store = []
 
     #Code for running tests on the images 
-    fits = sorted(glob("rSH*.fits")) 
+    file_dir_ = dir_ + name + '/'
+    fits = sorted(glob(file_dir_ + "*.fits")) 
+
+    print "Starting photometry for %s." % name
 
     #Determine the number of sources 
     for count, file_  in enumerate(fits): 
         
         #Load data from image
-        data = fitsio.read(file_)
-        data = data[0, :, :]     
+        data = fitsio.read(file_)     
 
         #Background image  
         bkg = sep.Background(data)
@@ -164,10 +168,9 @@ if __name__ == "__main__":
             flux_store.append(flux)
         else:
             index = match_stars(phot['x'], phot['y'], objects['x'], objects['y'])
-            #star_loc_plot(data, count, objects['x'], objects['y'], index)
-            
             nflux = np.zeros(phot['flux'].shape)
 
+            #if it's not in the original image it will get ignored!!!
             for j in range(0, len(flux)): 
                 if not(np.isnan(index[j])):
                     nflux[int(index[j])] = flux[j]
@@ -175,11 +178,9 @@ if __name__ == "__main__":
             
             flux_store.append(nflux)
 
-        print count
-
     flux_store = np.vstack(flux_store)
-    print flux_store.shape
-    np.savetxt("flux.txt", flux_store)
+    print "Completed photometry for %s." % name
+    np.savetxt(path.join(dir_, name + '.dat'), flux_store)
    
 '''
  

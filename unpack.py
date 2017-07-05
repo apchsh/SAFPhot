@@ -1,8 +1,7 @@
-import pyfits
-
 from os.path import join, exists, basename
 from os import makedirs
 from astropy.time import Time, TimeDelta
+from astropy.io import fits
 from copy import copy
 from glob import glob
 
@@ -45,13 +44,17 @@ def unpack_reduce(files, calframes, verbose=True):
         if verbose: print "Processing %s: %s " % (target, file_)
 
         #Create directory within reduction subfolder
-        outdir = join(master_outdir, target).replace(' ', '_')
+        outdir = join(master_outdir, target)
+        outdir = outdir.replace(' ', '_')
+        outdir = outdir.replace('(', '').replace(')','')
+        outdir = outdir.replace('\'', '_prime')
+
         if not exists(outdir): 
             makedirs(outdir)
             if verbose: print "%s folder created." % outdir
             
         #Open master files
-        f = pyfits.open(file_) 
+        f = fits.open(file_) 
         prihdr = f[0].header    
 
         for count in range(0, f[0].data.shape[0]):
@@ -63,7 +66,7 @@ def unpack_reduce(files, calframes, verbose=True):
             temp_header['JD'] = newtime.jd[0]
 
             fname = basename(file_).replace('.fits', '.%04d.fits' % count)
-            hdu = pyfits.PrimaryHDU(red_data, header=temp_header)
+            hdu = fits.PrimaryHDU(red_data, header=temp_header)
             hdu.writeto(join(outdir, fname), clobber=True)
 
         f.close()
