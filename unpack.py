@@ -56,18 +56,19 @@ def unpack_reduce(files, calframes, verbose=True):
         #Open master files
         f = fits.open(file_) 
         prihdr = f[0].header    
+        if not(prihdr['GPSSTART'] == ''):
 
-        for count in range(0, f[0].data.shape[0]):
+            for count in range(0, f[0].data.shape[0]):
 
-            temp_header = copy(prihdr)
-            red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
-
-            newtime = correct_time(temp_header, count)        
-            temp_header['JD'] = newtime.jd[0]
-
-            fname = basename(file_).replace('.fits', '.%04d.fits' % count)
-            hdu = fits.PrimaryHDU(red_data, header=temp_header)
-            hdu.writeto(join(outdir, fname), clobber=True)
+                temp_header = copy(prihdr)
+                red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
+    
+                newtime = correct_time(temp_header, count)        
+                temp_header['JD'] = newtime.jd[0]
+    
+                fname = basename(file_).replace('.fits', '.%04d.fits' % count)
+                hdu = fits.PrimaryHDU(red_data, header=temp_header)
+                hdu.writeto(join(outdir, fname), clobber=True)
 
         f.close()
 

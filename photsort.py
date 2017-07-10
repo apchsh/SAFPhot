@@ -1,6 +1,6 @@
-import pyfits
 import numpy as np
 
+from astropy.io import fits
 from fnmatch import fnmatch
 from os import path, walk
 from glob import glob
@@ -26,7 +26,8 @@ class fits_sort():
     # results
     bias = []
     flat = []; flat_filter = [];
-    target = []; target_filter = []; target_name = [];
+    target = []; target_filter = []; target_name = []; 
+    target_ra = []; target_dec = []
 
     def __init__(self, search_dir, camera, verbose=False):
 
@@ -54,11 +55,10 @@ class fits_sort():
         for file_ in files:
         
             # OPEN FILES
-            f = pyfits.open(file_)  
+            f = fits.open(file_)  
             fobject = f[0].header['OBJECT']
             filtera = f[0].header['FILTERA']
             filterb = f[0].header['FILTERB']
-            f.close()
         
             # CLEAN FILTERS
             filtera = filtera.strip().strip('\n')
@@ -69,16 +69,21 @@ class fits_sort():
             if filter_ == '': filter_ = 'WHITE'
 
             # SPLIT FILES INTO OBJECTS
-            if fobject.upper() == "BIAS":
+            if "BIAS" in fobject.upper():
                 self.bias.append(file_) 
-            elif fobject.upper() == "FLAT":
+            elif "FLAT" in fobject.upper():
                 self.flat.append(file_)
                 self.flat_filter.append(filter_) 
             else:
                 self.target.append(file_)
                 self.target_filter.append(filter_)
                 self.target_name.append((fobject + " (%s)") % filter_)
- 
+                self.target_ra.append(f[0].header['OBJRA'])
+                self.target_dec.append(f[0].header['OBJDEC'])
+
+            #CLOSE THE FILE
+            f.close()
+
         if self.verbose: print "Files sorted." 
 
     def summary(self):
@@ -99,6 +104,13 @@ class fits_sort():
             print "\t %i files for target %s." % (sum(temp_targs==object_),
                     object_)
 
-        
+    def summary_ra_dec(self):
+
+        #Information about targets
+        print "Found %i target files:" % len(self.target_name)
+        temp_targs = np.array(self.target_name, dtype=str)
+        for targ, ra, dec in zip(self.target_name, self.target_ra,
+                self.target_dec):
+            print "\t %s, ra: %s, dec %s." % (targ, ra, dec) 
 
 
