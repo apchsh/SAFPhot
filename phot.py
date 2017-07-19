@@ -184,7 +184,7 @@ def run_phot(dir_, name):
             jd_store.append(jd)
 
             if count == 1:
-                star_loc_plot(path.join(dir_, name +'.png'), flux,objects['x'], objects['y'], index)
+                star_loc_plot(path.join(dir_, name +'.png'), data_sub, objects['x'], objects['y'], index)
 
     flux_store = np.vstack(flux_store)
     jd_store = np.vstack(jd_store)
