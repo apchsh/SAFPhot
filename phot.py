@@ -165,7 +165,7 @@ def run_phot(dir_, name):
 
         #Extract objects    
         objects = sep.extract(data_sub, 4.0, err=bkg.globalrms)
-		pos_store.append((objects['x'], objects['y']))
+
 
 		#Get the half width radius 
 		fwhm, flags = flux_radius(data_sub, objects['x'], objects['y'], 10.0, 0.5, subpix=0)
@@ -174,18 +174,19 @@ def run_phot(dir_, name):
 		mean_fwhm = np.nanmean(fwhm); fwhm_store.append(fwhm)
 
 		#Update the positions using sep winpos algorithm
-		x, y = sep.winpos(data_sub, objects['x'], objects['y'], mean_fwhm, subpix=0)
+		x, y = sep.winpos(data_sub, objects['x'], objects['y'], mean_fwhm*0.424, subpix=0)
+		pos_store.append((x,y))
 
         #Calculate flux
-        flux, fluxerr, flag = sep.sum_circle(data_sub, objects['x'], objects['y'],
-                                                     mean_fwhm, err=bkg.globalrms, gain=1.0)
+        flux, fluxerr, flag = sep.sum_circle(data_sub, x, y,
+                                                     mean_fwhm*2, err=bkg.globalrms, gain=1.0)
         #store results
         if count == 0:
-            phot = init_store(flux, objects['x'], objects['y']) 
+            phot = init_store(flux, x, y) 
             flux_store.append(flux/exp) #correct the counts for exposure time           
             jd_store.append(jd)
         else:
-            index = match_stars(phot['x'], phot['y'], objects['x'], objects['y'])
+            index = match_stars(phot['x'], phot['y'], x, y)
             nflux = np.zeros(phot['flux'].shape)
 
             #if it's not in the original image it will get ignored!!!
