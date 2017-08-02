@@ -134,6 +134,8 @@ def run_phot(dir_, name):
     #Final variable to store flux
     flux_store = []
     jd_store = [] 
+	pos_store = []
+	fwhm_store = [] 
 
     #Code for running tests on the images 
     file_dir_ = dir_ + name + '/'
@@ -148,6 +150,7 @@ def run_phot(dir_, name):
         f = fitsio.FITS(file_)
         data = f[0][:, :]
         jd = f[0].read_header()["JD"]
+        exp = f[0].read_header()["EXPOSURE"]
         f.close() 
 
         #Background image  
@@ -162,14 +165,25 @@ def run_phot(dir_, name):
 
         #Extract objects    
         objects = sep.extract(data_sub, 4.0, err=bkg.globalrms)
+		pos_store.append((objects['x'], objects['y']))
+
+		#Get the half width radius 
+		fwhm, flags = flux_radius(data_sub, objects['x'], objects['y'], 10.0, 0.5, subpix=0)
+
+		#find the mean fwhm
+		mean_fwhm = np.nanmean(fwhm); fwhm_store.append(fwhm)
+
+		#Update the positions using sep winpos algorithm
+		x, y = sep.winpos(data_sub, objects['x'], objects['y'], mean_fwhm, subpix=0)
 
         #Calculate flux
         flux, fluxerr, flag = sep.sum_circle(data_sub, objects['x'], objects['y'],
-                                                     5.0, err=bkg.globalrms, gain=1.0)
+                                                     mean_fwhm, err=bkg.globalrms, gain=1.0)
         #store results
         if count == 0:
             phot = init_store(flux, objects['x'], objects['y']) 
-            flux_store.append(flux)            
+            flux_store.append(flux/exp) #correct the counts for exposure time           
+            jd_store.append(jd)
         else:
             index = match_stars(phot['x'], phot['y'], objects['x'], objects['y'])
             nflux = np.zeros(phot['flux'].shape)
@@ -180,7 +194,7 @@ def run_phot(dir_, name):
                     nflux[int(index[j])] = flux[j]
 
             
-            flux_store.append(nflux)
+            flux_store.append(nflux/exp) #correct the counts for exposure time
             jd_store.append(jd)
 
             if count == 1:
@@ -188,7 +202,13 @@ def run_phot(dir_, name):
 
     flux_store = np.vstack(flux_store)
     jd_store = np.vstack(jd_store)
+	fwhm_store = np.vstack(fwhm_store) #haven't tested this works
+	pos_store = np.vstack(pos_store) #haven't test this either! 
+	
     print "Completed photometry for %s." % name
     np.savetxt(path.join(dir_, name + '.dat'), flux_store)
     np.savetxt(path.join(dir_, name + '_jd.dat'), jd_store)
+	np.savetxt(path.join(dir_, name + '_pos.dat'), pos_store)
+	np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
+
 

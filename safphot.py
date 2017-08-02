@@ -33,25 +33,24 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print args
-    
-    
+        
     #Run the file detection and sorting code
     files = ps.fits_sort(args.d[0], args.c[0], verbose=True)
 
     files.summary_ra_dec()
 
     #Create the calibration master files (returns dict of frames)
-    calframes = red.create_calframes(files, verbose=True)
+    #calframes = red.create_calframes(files, verbose=True)
 
     #Unpack + reduce the files
-    up.unpack_reduce(files, calframes, verbose=True)
+    #up.unpack_reduce(files, calframes, verbose=True)
     
     #run photometry
-    dir_ = args.d[0] + 'reduction/'
-    for item in os.listdir(dir_):
-        
-        print "Processing photometry on %s" % item
-        ph.run_phot(dir_, item)
+    #dir_ = args.d[0] + 'reduction/'
+    #for item in os.listdir(dir_):
+    #    
+    #    print "Processing photometry on %s" % item
+    #    ph.run_phot(dir_, item)
 
 
 
