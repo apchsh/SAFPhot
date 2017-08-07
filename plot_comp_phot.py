@@ -10,10 +10,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings; warnings.simplefilter('ignore') 
+
 from astropy.stats import sigma_clip
 from os.path import join
 from astropy.table import Table
-import warnings
 
 warnings.simplefilter('ignore')
 
@@ -63,92 +64,70 @@ def air_corr(flux_r, jd, jd_oot_l, jd_oot_u):
     return flux_r
 
 
-def make_lc_plots(flux, jd, name, o_num, c_num, binning = 150,
-        norm_flux_lower = 0.9, norm_flux_upper = 1.05): 
+def make_lc_plots(flux, jd, name, comp_name="mean", binning = 150,
+        norm_flux_lower = 0.9, norm_flux_upper = 1.05, plot_lower = 1.00,
+        plot_upper = 1.00): 
+    '''Main fuction to perform the plotting of the lightcurves. Takes in
+    a flux and jd array as well as some parameters for the binning and 
+    clipping to be performed on the lightcurve. A comparison star name
+    is passed in as well. '''
 
     #Check sizes are the same
-    assert(flux.shape[0] == jd.shape[0])
+    assert(flux.shape == jd.shape)
 
     #Remove offset from jd
     off = np.floor(np.min(jd))
-    jd -= off
+    jd -= off    
 
-    #Get target flux
-    flux_o = flux[:,o_num]
+    #Clip outliers
+    flux[(flux > norm_flux_upper) | (flux < norm_flux_lower)] = np.nan
 
-    #Get mean of comparisons
-    flux_c_m = []
-    for i in c_num:
-        flux_c_m.append(flux[:,i])
-    flux_c_m = np.transpose(np.asarray(flux_c_m))
-    flux_c_m = np.nanmean(flux_c_m, axis=1)
+    #Set up plot
+    plt.cla()
+    plt.figure(figsize=(8,6), dpi=100)
+    
+    #Clean out nans from flux/jd
+    flux_clean = flux[np.isfinite(flux)]
+    jd_clean = jd[np.isfinite(flux)]            
+           
+    #bin block
+    flux_bin = bin_to_size(flux_clean, binning)
+    jd_bin = bin_to_size(jd_clean, binning)
+            
+    #Plot binned block
+    plt.scatter(jd_bin, flux_bin, zorder=2, c='r')
+   
+    #Convert collation of blocks back to arrays and flatten
+    jd_clean = np.hstack(jd_clean)
+    flux_clean = np.hstack(flux_clean)
 
-    #Insert mean of comparisons at end of flux array
-    flux = np.append(flux, flux_c_m[:,None], axis=1)
+    #Plot unbinned collation of blocks
+    plt.scatter(jd_clean, flux_clean, alpha=0.5, zorder=1, c='b')
+    plt.title(name + ' std: %7.5f' % np.std(flux_bin))
+    plt.xlabel('JD - %d' %off)
+    plt.ylabel('Relative flux')
 
-    #insert placeholder for last column in flux array in c_num
-    c_num.append(-1)
-
-    #Iterate over comparison stars
-    for i in c_num:
-        if i == -1:
-            print ("comparison star mean")
-        else:
-            print ("comparison star %d" %i)
-
-        #Get comparison flux
-        flux_c = flux[:,i]
-
-        #Get ratio of target to comparison
-        flux_r = flux_o/flux_c
-
-        #Normalise flux
-        flux_r /= np.nanmedian(flux_r)
-
-        #Clip outliers
-        flux_r[(flux_r > norm_flux_upper) | (flux_r < norm_flux_lower)] = np.nan
-
-        #Set up plot
-        plt.cla()
-        plt.figure(i, figsize=(8,6), dpi=100)
-        
-        #Clean out nans from flux/jd
-        flux_clean = flux_r[np.isfinite(flux_r)]
-        jd_clean = jd[np.isfinite(flux_r)]
-                  
-               
-        #bin block
-        flux_bin = bin_to_size(flux_clean, b)
-        jd_bin = bin_to_size(jd_clean, b)
-                
-        #Plot binned block
-        plt.scatter(jd_bin, flux_bin, zorder=2, c='r')
-
-        #Change name of file for mean
-        if i == -1: i="mean"
-        
-        #Convert collation of blocks back to arrays and flatten
-        jd_clean = np.hstack(jd_clean)
-        flux_clean = np.hstack(flux_clean)
-
-        #Plot unbinned collation of blocks
-        plt.scatter(jd_clean, flux_clean, alpha=0.5, zorder=1, c='b')
-        plt.title(name + ' std: %7.5f' % np.std(flux_bin))
-        plt.xlabel('JD - %d' %off)
-        plt.ylabel('Relative flux')
+    if (plot_upper == 1.00) and (plot_lower == 1.00):
         plt.autoscale(enable=True, axis='y')
-        
-        #Save plots as png
-        png_name = join(dir_,name + '_obj_%d_comparison_%s.png' %(o_num,str(i))) 
-        plt.savefig(png_name)
-        plt.close()
-        #plt.show()
-        
-        #Save data as FITS
-        jd_clean += off #Add offset back on to JD
-        t_out = Table([jd_clean, flux_clean], names=('JD', 'Relative flux'))
-        fits_name = join(dir_,name + '_obj_%d_comparison_%s.fits' %(o_num,str(i))) 
-        t_out.write(fits_name, overwrite=True)
+    else:
+        plt.ylim((plot_lower, plot_upper))
+    
+    #Save plots as png
+    png_name = join(dir_,name + '_comparison_%s.png' % comp_name) 
+    plt.savefig(png_name, bbox_inches="tight")
+    plt.close()
+    #plt.show()
+
+
+def save_data_fits(jd, flux, file_name, comp_name):
+    '''Function to save the data as a fits file usings the astropy.io.fits
+    library a.k.a PyFits.'''
+
+    #Save data as FITS
+    t_out = Table([jd, flux], names=('JD', 'Differential flux'))
+    fits_name = join(file_name + '_comparison_%s.fits' % comp_name) 
+    t_out.write(fits_name, overwrite=True)
+
 
 def differential_photometry(flux, obj_index, comp_index):
     '''Function to perform differential photometry. Expected output from the
@@ -159,35 +138,77 @@ def differential_photometry(flux, obj_index, comp_index):
     stars.''' 
     
     #create variable to store the comparison stars
-    comp_flux = np.zeros((flux.shape[0], 1, flux.shape[2]))
+    comp_flux = np.zeros((flux.shape[0], flux.shape[2]))
 
     #add the comparison stars together 
     for index in comp_index:
-        comp_flux += flux[:, index, :] 
+        comp_flux = comp_flux + flux[:, index, :] 
 
     #normalise the fluxes 
-    flux /= 
+    obj_flux = flux[:, obj_index, :] / np.mean(flux[:, obj_index, :], axis=1).reshape((flux.shape[0], 1))  
+    comp_flux /= np.mean(comp_flux, axis=1).reshape((comp_flux.shape[0], 1))
+
+    return obj_flux / comp_flux, obj_flux, comp_flux 
 
 if __name__ == "__main__":
 
     #Directory and file names
-    dir_ = 'reduction'
+    dir_ = '/rfs/XROA/apc34/SAAO/run3/reduction/'
     flux_file = 'NG34149_V_-_Green.dat'
     jd_file = 'NG34149_V_-_Green_jd.dat'
     name = 'NG0518-3633.34149'
 
     #Load the data
-    flux = np.loadtxt(flux_file)
-    jd = np.loadtxt(jd_file) 
+    flux = np.loadtxt(join(dir_, flux_file))
+    jd = np.loadtxt(join(dir_, jd_file))
+
+    #Reshape the data to have the correct dimensions (3D array save in 2D format).
+    num_apertures = 100
+    flux = flux.reshape((num_apertures, flux.shape[0]/num_apertures, flux.shape[1])) 
 
     #Define target and comparison object numbers (indicies) from object number plot
     o_num = 0              # As integer
     c_num = [1, 2]      # As list
 
-    #Perform differential photometry
+    #Perform differential photometry using mean comparison star
+    diff_flux, obj_flux, comp_flux = differential_photometry(flux, o_num, c_num)
 
     #Pick the best signal to noise
-
+    signal = np.mean(diff_flux, axis=1) #should be approximately 1 
+    noise = np.std(diff_flux, axis=1) #should be a small numbers 
+    sn_max = np.where(signal/noise == max(signal/noise))
+   
+    #Print the signal to noise
+    print "Signal to noise is approximately: %f" % (signal/noise)[sn_max]
+    
     #Call the function to make the plots
-    make_lc_plots(flux_single_aperture, jd, name, o_num, c_num)
+    make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name="mean", binning = 150,
+        norm_flux_lower = 0.9, norm_flux_upper = 1.05)
+
+    print "Mean plot finished."
+
+    make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name="mean_bin",
+            plot_lower = 0.997, plot_upper = 1.003)
+
+    print "Mean zoomed plot finished."
+
+    #Work through the comparison stars at optimal s/n and plots those
+
+    for cindex in c_num:
+
+        diff_flux, obj_flux, comp_flux = differential_photometry(flux, o_num,
+                [cindex])
+    
+        signal = np.mean(diff_flux, axis=1) #should be approximately 1 
+        noise = np.std(diff_flux, axis=1) #should be a small numbers 
+        sn_max = np.where(signal/noise == max(signal/noise))
+   
+        make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name=str(cindex))
+
+        make_lc_plots(diff_flux[sn_max][0, :], jd, name,
+                comp_name=str(cindex)+"_bin", plot_lower=0.997,
+                plot_upper=1.003)
+
+        print "Comparison plot for comp star %i is finished." % cindex
+
 
