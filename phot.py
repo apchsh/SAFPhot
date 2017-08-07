@@ -133,9 +133,9 @@ def run_phot(dir_, name):
 
     #Final variable to store flux
     flux_store = []
-    jd_store = [] 
-	pos_store = []
-	fwhm_store = [] 
+    jd_store = []
+    pos_store = []
+    fwhm_store = [] 
 
     #Code for running tests on the images 
     file_dir_ = dir_ + name + '/'
@@ -154,7 +154,7 @@ def run_phot(dir_, name):
         f.close() 
 
         #Background image  
-        bkg = sep.Background(data)
+        bkg = sep.Background(data, bw=32, bh=32)
 
         #Save background image
         bkg_image = bkg.back()
@@ -166,33 +166,69 @@ def run_phot(dir_, name):
         #Extract objects    
         objects = sep.extract(data_sub, 4.0, err=bkg.globalrms)
 
+        #Get the half width radius 
+        fwhm, flags = sep.flux_radius(data_sub, objects['x'], objects['y'], \
+                np.ones(len(objects['x']))*10.0, 0.5, subpix=10)
 
-		#Get the half width radius 
-		fwhm, flags = flux_radius(data_sub, objects['x'], objects['y'], 10.0, 0.5, subpix=0)
+        #Store the result 
+        fwhm_store.append(fwhm)
 
-		#find the mean fwhm
-		mean_fwhm = np.nanmean(fwhm); fwhm_store.append(fwhm)
+        #Update the positions using sep winpos algorithm
+        x,y,f = sep.winpos(data_sub, objects['x'], objects['y'], \
+                fwhm*0.424, subpix=10)
+        
+        #Store the positions 
+        pos_store.append((x,y))
 
-		#Update the positions using sep winpos algorithm
-		x, y = sep.winpos(data_sub, objects['x'], objects['y'], mean_fwhm*0.424, subpix=0)
-		pos_store.append((x,y))
+        #radius 
+        radii = np.arange(2.0, 12.0, 0.1)
+        rad = [] 
+
+        for z  in range(0, len(x)):
+            rad.append(radii)
+
+        x_rad = np.tile(x, len(radii))
+        y_rad = np.tile(y, len(radii))
+        x_rad = x_rad.reshape((len(radii), len(x)))
+        y_rad = y_rad.reshape((len(radii), len(y)))
+
+        
+
+        radii = np.array(rad)
+        radii = radii.transpose()
+
+        print x_rad.shape
+        print y_rad.shape
+        print radii.shape
 
         #Calculate flux
-        flux, fluxerr, flag = sep.sum_circle(data_sub, x, y,
-                                                     mean_fwhm*2, err=bkg.globalrms, gain=1.0)
+        flux, fluxerr, flag = sep.sum_circle(data_sub, x_rad, y_rad,
+                                        radii, err=bkg.globalrms, gain=1.0)
+
+        print flux.shape
+
         #store results
         if count == 0:
             phot = init_store(flux, x, y) 
             flux_store.append(flux/exp) #correct the counts for exposure time           
             jd_store.append(jd)
         else:
+
+            print x
+            print phot['x']
+
             index = match_stars(phot['x'], phot['y'], x, y)
             nflux = np.zeros(phot['flux'].shape)
 
+            print nflux.shape
+            print flux.shape
+
             #if it's not in the original image it will get ignored!!!
-            for j in range(0, len(flux)): 
+            for j in range(0, flux.shape[1]): 
                 if not(np.isnan(index[j])):
-                    nflux[int(index[j])] = flux[j]
+                    print index[j]
+
+                    nflux[:, int(index[j])] = flux[:, j]
 
             
             flux_store.append(nflux/exp) #correct the counts for exposure time
@@ -201,15 +237,42 @@ def run_phot(dir_, name):
             if count == 1:
                 star_loc_plot(path.join(dir_, name +'.png'), data_sub, objects['x'], objects['y'], index)
 
-    flux_store = np.vstack(flux_store)
+    flux_store = np.dstack(flux_store)
+
+    print flux_store
+    print flux_store.shape
+
     jd_store = np.vstack(jd_store)
-	fwhm_store = np.vstack(fwhm_store) #haven't tested this works
-	pos_store = np.vstack(pos_store) #haven't test this either! 
-	
+    fwhm_store = np.hstack(fwhm_store) #haven't tested this works
+    pos_store = np.hstack(pos_store) #haven't test this either! 
+    
     print "Completed photometry for %s." % name
-    np.savetxt(path.join(dir_, name + '.dat'), flux_store)
+
+    with file(path.join(dir_, name + '.dat'), 'w') as outfile:
+        
+        # I'm writing a header here just for the sake of readability
+        # Any line starting with "#" will be ignored by numpy.loadtxt
+        outfile.write('# Array shape: {0}\n'.format(fwhm_store.shape))
+
+        '''SOLUTION FROM STACK OVERFLOW:
+        https://stackoverflow.com/questions/3685265/how-to-write-a-multidimensional-array-to-a-text-file'''
+
+        # Iterating through a ndimensional array produces slices along
+        # the last axis. This is equivalent to data[i,:,:] in this case
+        for data_slice in flux_store:
+
+            # The formatting string indicates that I'm writing out
+            # the values in left-justified columns 7 characters in width
+            #  with 2 decimal places.  
+                             
+            np.savetxt(outfile, data_slice, fmt='%-7.5f')
+
+            # Writing out a break to indicate different slices...
+            outfile.write('# New slice\n')
+
+
     np.savetxt(path.join(dir_, name + '_jd.dat'), jd_store)
-	np.savetxt(path.join(dir_, name + '_pos.dat'), pos_store)
-	np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
+    np.savetxt(path.join(dir_, name + '_pos.dat'), pos_store)
+    np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
 
 
