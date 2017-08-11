@@ -18,12 +18,38 @@ from astropy.table import Table
 
 warnings.simplefilter('ignore')
 
-def bin_to_size(data, num_points_bin):
+def bin_to_size(data, num_points_bin, block_exposure_times, 
+        block_index_boundaries, mask):
     '''Convenience function to bin everything to a fixed num of points per
     bin. Data is clipped to the nearest bin (i.e. data % num_points_bin are
     discarded from the end of the time series).'''
-    num_bins = int(len(data) / num_points_bin)
-    return rebin(data[0:num_bins*num_points_bin], num_bins)
+    
+    #Initialise storeage for blocks
+    data_rack = []
+
+    #Iterate over blocks
+    for j, value in enumerate(block_index_boundaries):
+        if j < len(block_index_boundaries) -1:
+            #Get block
+            data_block = data[value:block_index_boundaries[j+1]]
+            mask_block = mask[value:block_index_boundaries[j+1]]
+            
+            #Clean out nans from block
+            data_block = data_block[mask_block]
+
+            #Calculate number of points per bin for block
+            npb = num_points_bin / block_exposure_times[j]
+
+            #bin block
+            num_bins = int(len(data_block) / npb)
+            data_block = rebin(data_block[0:num_bins*npb], num_bins)
+
+            #Store block in rack
+            data_rack.append(data_block)
+
+    #Flatten rack
+    rebinned_data = np.hstack(data_rack)
+    return rebinned_data
 
 def rebin(a, *args):
     '''From the scipy cookbook on rebinning arrays
@@ -55,18 +81,16 @@ def air_corr(flux_r, jd, jd_oot_l, jd_oot_u):
     '''
 
     #Divide out residual airmass using out of transit region
-    if airmass_correct == 'Yes':
-        oot = ((jd < jd_oot_l) | (jd > jd_oot_u)) & (np.isfinite(flux_r)) & (np.isfinite(jd))
-        poly1 = np.poly1d(np.polyfit(jd[oot], flux_r[oot], 2))
-        p1 = poly1(jd)
-        flux_r /= p1
-
+    oot = ((jd < jd_oot_l) | (jd > jd_oot_u)) & (np.isfinite(flux_r)) & (np.isfinite(jd))
+    poly1 = np.poly1d(np.polyfit(jd[oot], flux_r[oot], 2))
+    p1 = poly1(jd)
+    flux_r /= p1
     return flux_r
 
 
-def make_lc_plots(flux, jd, name, comp_name="mean", binning = 150,
-        norm_flux_lower = 0.9, norm_flux_upper = 1.05, plot_lower = 1.00,
-        plot_upper = 1.00): 
+def make_lc_plots(flux, jd, name, block_exp_t, block_ind_bound, comp_name="mean", 
+        binning = 150, norm_flux_lower = 0.9, norm_flux_upper = 1.05,
+        plot_lower = 1.00, plot_upper = 1.00): 
     '''Main fuction to perform the plotting of the lightcurves. Takes in
     a flux and jd array as well as some parameters for the binning and 
     clipping to be performed on the lightcurve. A comparison star name
@@ -77,42 +101,43 @@ def make_lc_plots(flux, jd, name, comp_name="mean", binning = 150,
 
     #Remove offset from jd
     off = np.floor(np.min(jd))
-    jd -= off    
+    jd_o = jd - off    
 
     #Clip outliers
     flux[(flux > norm_flux_upper) | (flux < norm_flux_lower)] = np.nan
+
+    #Get finite data mask
+    mask = np.isfinite(flux)
+
+    #bin data
+    flux_bin = bin_to_size(flux, binning, block_exp_t, block_ind_bound, mask)
+    jd_bin = bin_to_size(jd_o, binning, block_exp_t, block_ind_bound, mask)
+
+    #Save data to FITS files
+    save_data_fits(jd_o, flux, name, comp_name)
+    save_data_fits(jd_bin, flux_bin, name, comp_name + "_bin")
 
     #Set up plot
     plt.cla()
     plt.figure(figsize=(8,6), dpi=100)
     
-    #Clean out nans from flux/jd
-    flux_clean = flux[np.isfinite(flux)]
-    jd_clean = jd[np.isfinite(flux)]            
-           
-    #bin block
-    flux_bin = bin_to_size(flux_clean, binning)
-    jd_bin = bin_to_size(jd_clean, binning)
-            
-    #Plot binned block
+    #Plot unbinned data
+    plt.scatter(jd_o, flux, alpha=0.5, zorder=1, c='b')
+    
+    #Plot binned data
     plt.scatter(jd_bin, flux_bin, zorder=2, c='r')
-   
-    #Convert collation of blocks back to arrays and flatten
-    jd_clean = np.hstack(jd_clean)
-    flux_clean = np.hstack(flux_clean)
-
-    #Plot unbinned collation of blocks
-    plt.scatter(jd_clean, flux_clean, alpha=0.5, zorder=1, c='b')
+    
+    #Labels, titles and scaling
     plt.title(name + ' std: %7.5f' % np.std(flux_bin))
     plt.xlabel('JD - %d' %off)
     plt.ylabel('Relative flux')
-
+    
     if (plot_upper == 1.00) and (plot_lower == 1.00):
         plt.autoscale(enable=True, axis='y')
     else:
         plt.ylim((plot_lower, plot_upper))
-    
-    #Save plots as png
+
+    #Save plot as png
     png_name = join(dir_,name + '_comparison_%s.png' % comp_name) 
     plt.savefig(png_name, bbox_inches="tight")
     plt.close()
@@ -129,7 +154,7 @@ def save_data_fits(jd, flux, file_name, comp_name):
     t_out.write(fits_name, overwrite=True)
 
 
-def differential_photometry(flux, obj_index, comp_index):
+def differential_photometry(flux, obj_index, comp_index, norm_mask):
     '''Function to perform differential photometry. Expected output from the
     SAFPhot pipeline is a flux array of shape = (num_apertures, num_objects,
     num_exposures) and a obj_index = int and a comp_index = [int, int, ...,
@@ -145,70 +170,127 @@ def differential_photometry(flux, obj_index, comp_index):
         comp_flux = comp_flux + flux[:, index, :] 
 
     #normalise the fluxes 
-    obj_flux = flux[:, obj_index, :] / np.mean(flux[:, obj_index, :], axis=1).reshape((flux.shape[0], 1))  
-    comp_flux /= np.mean(comp_flux, axis=1).reshape((comp_flux.shape[0], 1))
+    obj_flux = (flux[:, obj_index, :] / 
+        np.median(flux[:, obj_index, norm_mask], axis=1).reshape((flux.shape[0], 1)))  
+    comp_flux /= (
+        np.median(comp_flux[:, norm_mask], axis=1).reshape((comp_flux.shape[0], 1)))
 
     return obj_flux / comp_flux, obj_flux, comp_flux 
+
+def movingaverage(data, window_size):
+    window = numpy.ones(int(window_size))/float(window_size)
+    return numpy.convolve(data, window, 'same')
 
 if __name__ == "__main__":
 
     #Directory and file names
-    dir_ = '/rfs/XROA/apc34/SAAO/run3/reduction/'
+    dir_ = '/scratch/ngts/lr182/SAAO_july_2017/test'
     flux_file = 'NG34149_V_-_Green.dat'
     jd_file = 'NG34149_V_-_Green_jd.dat'
     name = 'NG0518-3633.34149'
+
+    #Define target and comparison object numbers (indicies) from object number plot
+    o_num = 0              # As integer
+    c_num = [1, 2]      # As list
+
+    #Define num points per bin for binning
+    #parameter has units of time if block_exposure_times != [1]
+    b = 15 * 1
+
+    #Define blocks of different exposure times
+    #Leave right-most boundary open so the following two lists have the same length
+    block_index_boundaries = [0]
+    block_exposure_times = [1]
+   
+    #Define normalised flux limits outside which outliers are clipped
+    norm_flux_upper = 1.05
+    norm_flux_lower = 0.9
+
+    #Normalised flux axis limit values for zoomed plots
+    plot_upper = 1.0002
+    plot_lower = 0.997
+    
+    #Define out of transit region in JD. Both initialised to 5 until LC is produced
+    #Which means flux is normalised using median over the whole LC.
+    #If discrete ingress/egress are identified, values can be refined.
+    #Set LOWER limit TO 0 if no period before INGRESS
+    #Set UPPER limit HIGH (~5) if no period after EGRESS
+    jd_oot_l = 5
+    jd_oot_u = 5
+
+    #Num different sized apertures used to measure the flux
+    num_apertures = 100
+    
 
     #Load the data
     flux = np.loadtxt(join(dir_, flux_file))
     jd = np.loadtxt(join(dir_, jd_file))
 
     #Reshape the data to have the correct dimensions (3D array save in 2D format).
-    num_apertures = 100
     flux = flux.reshape((num_apertures, flux.shape[0]/num_apertures, flux.shape[1])) 
 
-    #Define target and comparison object numbers (indicies) from object number plot
-    o_num = 0              # As integer
-    c_num = [1, 2]      # As list
+    #Add index of last row in flux array to list of block boundaries
+    block_index_boundaries.append(flux.shape[2])
 
     #Perform differential photometry using mean comparison star
-    diff_flux, obj_flux, comp_flux = differential_photometry(flux, o_num, c_num)
+    norm_mask = (jd<jd_oot_l) | (jd>jd_oot_u)
+    diff_flux, obj_flux, comp_flux = differential_photometry(flux, o_num, c_num, norm_mask)
 
     #Pick the best signal to noise
     signal = np.mean(diff_flux, axis=1) #should be approximately 1 
     noise = np.std(diff_flux, axis=1) #should be a small numbers 
     sn_max = np.where(signal/noise == max(signal/noise))
-   
+  
     #Print the signal to noise
     print "Signal to noise is approximately: %f" % (signal/noise)[sn_max]
     
     #Call the function to make the plots
-    make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name="mean", binning = 150,
-        norm_flux_lower = 0.9, norm_flux_upper = 1.05)
+    make_lc_plots(diff_flux[sn_max][0, :], jd, name, block_exposure_times,
+            block_index_boundaries, comp_name="mean", 
+            binning = b, norm_flux_lower = norm_flux_lower,
+            norm_flux_upper = norm_flux_upper)
 
     print "Mean plot finished."
 
-    make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name="mean_bin",
-            plot_lower = 0.997, plot_upper = 1.003)
+    make_lc_plots(diff_flux[sn_max][0, :], jd, name, block_exposure_times,
+            block_index_boundaries, comp_name="mean_zoomed",
+            binning = b, plot_lower = plot_lower, plot_upper = plot_upper)
 
     print "Mean zoomed plot finished."
 
     #Work through the comparison stars at optimal s/n and plots those
-
     for cindex in c_num:
-
         diff_flux, obj_flux, comp_flux = differential_photometry(flux, o_num,
-                [cindex])
+                [cindex], norm_mask)
     
         signal = np.mean(diff_flux, axis=1) #should be approximately 1 
-        noise = np.std(diff_flux, axis=1) #should be a small numbers 
+        noise = np.std(diff_flux, axis=1) #should be a small number 
         sn_max = np.where(signal/noise == max(signal/noise))
    
-        make_lc_plots(diff_flux[sn_max][0, :], jd, name, comp_name=str(cindex))
+        make_lc_plots(diff_flux[sn_max][0, :], jd, name, block_exposure_times,
+                block_index_boundaries, comp_name=str(cindex), binning = b)
 
-        make_lc_plots(diff_flux[sn_max][0, :], jd, name,
-                comp_name=str(cindex)+"_bin", plot_lower=0.997,
-                plot_upper=1.003)
+        make_lc_plots(diff_flux[sn_max][0, :], jd, name, block_exposure_times,
+                block_index_boundaries, comp_name=str(cindex)+"_zoomed", 
+                binning = b, plot_lower = plot_lower, plot_upper = plot_upper)
 
         print "Comparison plot for comp star %i is finished." % cindex
+        
+        #Get diff flux of comparison with mean of other comparisons
+        if (len(c_num) > 1):
+            comp_mask = np.not_equal(c_num, [cindex]*len(c_num))
+            other_comps = np.asarray(c_num)[comp_mask]
+            diff_flux_other, obj_flux_other, comp_flux_other = differential_photometry(
+                flux, cindex, other_comps, norm_mask)
 
+            make_lc_plots(diff_flux_other[sn_max][0, :], jd, name, block_exposure_times,
+                block_index_boundaries, comp_name=str(cindex)+"_vs_other_comps", 
+                binning = b)
+
+            make_lc_plots(diff_flux_other[sn_max][0, :], jd, name, block_exposure_times,
+                block_index_boundaries, comp_name=str(cindex)+"_vs_other_comps_zoomed", 
+                binning = b, plot_lower = plot_lower, plot_upper = plot_upper)
+
+            print ("Comparison plot of comp star %i vs mean of other comparisons"\
+                     " is finished." % cindex)
 
