@@ -1,8 +1,6 @@
 import numpy as np
-
-#need both unfortunately
-import sys; sys.path.append("/home/a/apc34/")
-
+import sys; 
+#sys.path.append("/home/a/apc34/")
 import fitsio
 
 from astropy.io import fits
@@ -68,7 +66,7 @@ def create_calframes(files, verbose=False):
     bias_mean = np.mean(bias_frames, axis=0)
     fitsio.write(join(outdir, "bias.fits"), bias_mean)
 
-    print bias_frames.shape
+    #print bias_frames.shape
     print bias_mean.shape
 
     if verbose: print "Bias calibration frame saved to %s (%i exposures)." % (join(outdir,

@@ -56,6 +56,7 @@ class fits_sort():
         
             # OPEN FILES
             f = fits.open(file_)  
+            fobstype = f[0].header['OBSTYPE']
             fobject = f[0].header['OBJECT']
             filtera = f[0].header['FILTERA']
             filterb = f[0].header['FILTERB']
@@ -69,9 +70,9 @@ class fits_sort():
             if filter_ == '': filter_ = 'WHITE'
 
             # SPLIT FILES INTO OBJECTS
-            if "BIAS" in fobject.upper():
+            if "BIAS" in fobstype.upper():
                 self.bias.append(file_) 
-            elif "FLAT" in fobject.upper():
+            elif "FLAT" in fobstype.upper():
                 self.flat.append(file_)
                 self.flat_filter.append(filter_) 
             else:

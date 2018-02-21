@@ -1,6 +1,7 @@
 from os.path import join, exists, basename
 from os import makedirs
 from astropy.time import Time, TimeDelta
+from astropy import coordinates as coord, units as u
 from astropy.io import fits
 from copy import copy
 from glob import glob
@@ -33,10 +34,35 @@ def correct_time(header, frame_num):
     header['EXPOSURE'] * 0.5, format='sec')
     return t + dt
 
+def convert_jd_hjd(jd, header, loc):
+   
+    #Get RA and DEC
+    ra = header['OBJRA'].replace(" ", ":")
+    dec = header['OBJDEC'].replace(" ", ":")
+
+    #Get object sky coords in correct format
+    coords = coord.SkyCoord(ra, dec,
+                unit=(u.hourangle, u.deg), frame='icrs')
+
+    #Define JD as time object
+    times = Time(jd, format='jd',
+                scale='utc', location=loc)
+
+    #Define light travel time
+    ltt_helio = times.light_travel_time(coords, 'heliocentric')
+
+    #Correct JD to HJD
+    hjd = times.utc + ltt_helio
+    return hjd.jd
+
+
 def unpack_reduce(files, calframes, verbose=True):
 
     #prepare for unpacking process
     master_outdir = join(files.dir_ , 'reduction') 
+
+    #Retrieve Earth coords of telescope, use SALT
+    loc = coord.EarthLocation.of_site('SALT')
 
     for file_, target, filt in zip(files.target, files.target_name,
             files.target_filter):    
@@ -45,6 +71,7 @@ def unpack_reduce(files, calframes, verbose=True):
 
         #Create directory within reduction subfolder
         outdir = join(master_outdir, target)
+        outdir = outdir.replace(' - ', '_')
         outdir = outdir.replace(' ', '_')
         outdir = outdir.replace('(', '').replace(')','')
         outdir = outdir.replace('\'', '_prime')
@@ -55,21 +82,26 @@ def unpack_reduce(files, calframes, verbose=True):
             
         #Open master files
         f = fits.open(file_) 
-        prihdr = f[0].header    
-        if not(prihdr['GPSSTART'] == ''):
+        prihdr = copy(f[0].header) 
+        #If GPSSTART time is missing, calculate it
+        if (prihdr['GPSSTART'] == '', prihdr['GPSSTART'] == 'NA'):
+            frame_time = Time([prihdr['FRAME']], format='isot', scale='utc')
+            dt_exp = TimeDelta(val=prihdr['EXPOSURE'], format='sec')
+            cal_gps_time = (frame_time - dt_exp).isot[0]
+            prihdr['GPSSTART'] = cal_gps_time
 
-            for count in range(0, f[0].data.shape[0]):
+        for count in range(0, f[0].data.shape[0]):
 
-                temp_header = copy(prihdr)
-                red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
-    
-                newtime = correct_time(temp_header, count)        
-                temp_header['JD'] = newtime.jd[0]
-    
-                fname = basename(file_).replace('.fits', '.%04d.fits' % count)
-                hdu = fits.PrimaryHDU(red_data, header=temp_header)
-                hdu.writeto(join(outdir, fname), clobber=True)
+            temp_header = copy(prihdr)
+            red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
 
+            newtime = correct_time(temp_header, count)        
+            temp_header['JD'] = newtime.jd[0]
+            temp_header['HJD'] = convert_jd_hjd(newtime.jd[0], temp_header, loc)
+
+            fname = basename(file_).replace('.fits', '.%04d.fits' % count)
+            hdu = fits.PrimaryHDU(red_data, header=temp_header)
+            hdu.writeto(join(outdir, fname), overwrite=True)
         f.close()
 
     print "Reduction and unpacking complete." 
