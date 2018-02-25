@@ -6,8 +6,6 @@ A series of scripts to analyse data taken with SHOC on the 1m and 1.9m telescope
 
 A recent version of Numpy and Scipy is required. SEP (http://sep.readthedocs.io/en/v1.0.x/index.html) is used to perform photometry on the the sciences images. Currently both FITSIO and PyFITs needs to be installed for the pipeline to work. This is due to bugs in the versions of the libraries available on the ALICE/SPECTRE super computer systems in the University of Leicester where this code is primarily run. PyFITS needs to be callable as "pyfits", so installing via astropy.io will not work at this stage. Donuts (https://donuts.readthedocs.io/en/master/) is required to calculate the shift of each frame relative to the first frame. The current release version of Donuts (V0.2.1) still uses function arguments which have been depricated in more recent versions. E.g. in skimage.transform.resize, mode='nearest'.
 
- 
-
 All libraries are instalable via pip, e.g. "pip install fitsio". 
 
 ## Running SAFPhot
@@ -18,3 +16,12 @@ The "-c" parameter takes the camera name (SHA/SHD/SHH), the "-t" parameter takes
 SAFPhot will produce: a calframes folder (holding the current calibration frames), a reduction folder (holding the split and reduced frames) and .dat files with the jd and flux values for the data. 
 
 
+## ToDo - Version 0.1 
+
+- Add an end-to-end test to the code with examples from the 1.0m and 1.9m telescope header files. Add other tests as appropriate. 
+- Review new files which have been added, to see if the code can be better organised. 
+- Add functionality in photsort.py to continue from a partially completed run of SAFPhot. In other words don't re-run all processing.
+- Review output format of the flux files. Combine into FITS megafiles? 
+- Check compatability with latest DONUTS version. 
+- Add comments _everywhere_. 
+- Review and consolidate plotting scripts. 
