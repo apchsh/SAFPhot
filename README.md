@@ -25,3 +25,12 @@ SAFPhot will produce: a calframes folder (holding the current calibration frames
 - Check compatability with latest DONUTS version. 
 - Add comments _everywhere_. 
 - Review and consolidate plotting scripts. 
+- Update phot file to read in BJD from headers and use as default time format
+  throughout but preserving all formats in the final output file
+- Consolidate phot files for each telescope into a single file but with correct 
+  plate scales and aperture radii used at runtime, depending on the telescope
+- Consider merging data from multiple data output files into a single file
+  where possible
+- Review binning logic. Frames with different exposure times are currently
+  binned separately, creating a discontinuity. Use times to determine binning?
+- Add output plots to plot_comp_phot such as FWHM

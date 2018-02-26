@@ -55,6 +55,26 @@ def convert_jd_hjd(jd, header, loc):
     hjd = times.utc + ltt_helio
     return hjd.jd
 
+def convert_jd_bjd(jd, header, loc):
+   
+    #Get RA and DEC
+    ra = header['OBJRA'].replace(" ", ":")
+    dec = header['OBJDEC'].replace(" ", ":")
+
+    #Get object sky coords in correct format
+    coords = coord.SkyCoord(ra, dec,
+                unit=(u.hourangle, u.deg), frame='icrs')
+
+    #Define JD as time object
+    times = Time(jd, format='jd',
+                scale='utc', location=loc)
+
+    #Define light travel time
+    ltt_bary = times.light_travel_time(coords)
+
+    #Correct JD to BJD
+    bjd = times.tdb + ltt_bary
+    return bjd.jd
 
 def unpack_reduce(files, calframes, verbose=True):
 
@@ -98,6 +118,7 @@ def unpack_reduce(files, calframes, verbose=True):
             newtime = correct_time(temp_header, count)        
             temp_header['JD'] = newtime.jd[0]
             temp_header['HJD'] = convert_jd_hjd(newtime.jd[0], temp_header, loc)
+            temp_header['BJD'] = convert_jd_bjd(newtime.jd[0], temp_header, loc)
 
             fname = basename(file_).replace('.fits', '.%04d.fits' % count)
             hdu = fits.PrimaryHDU(red_data, header=temp_header)
