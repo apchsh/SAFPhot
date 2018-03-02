@@ -281,8 +281,8 @@ if __name__ == "__main__":
     #Define out of transit region in JD. Both initialised to 99 until LC is produced
     #Which means flux is normalised using median over the whole LC.
     #If/when discrete oot region is identified, values can be refined
-    jd_oot_l = 99
-    jd_oot_u = 99
+    xjd_oot_l = 99
+    xjd_oot_u = 99
 
     #Aperture sizes in pixels used by phot.py for screen printing
     apps = np.arange(20, 60, 1) /10.0  # Uncomment for 1.0m
@@ -309,11 +309,12 @@ if __name__ == "__main__":
     bkg_flux_file = glob(dir_ + '/*bkg_flux.dat')[0]
     jd_file = glob(dir_ + '/*jd.dat')[0]
     hjd_file = glob(dir_ + '/*hjd.dat')[0]
+    bjd_file = glob(dir_ + '/*bjd.dat')[0]
 
     #Load the data
     flux = loadmat(flux_file)['flux']
     fluxerr = loadmat(fluxerr_file)['fluxerr']
-    jd = np.loadtxt(hjd_file)
+    xjd = np.loadtxt(bjd_file)
     bkg_flux = np.loadtxt(bkg_flux_file)
 
     #Check flux data array has the correct dimensions.
@@ -325,8 +326,8 @@ if __name__ == "__main__":
     block_index_boundaries.append(flux.shape[3])
 
     #Perform differential photometry using mean comparison star
-    jd_off = np.floor(np.nanmin(jd))
-    norm_mask = (jd-jd_off < jd_oot_l) | (jd - jd_off > jd_oot_u)
+    xjd_off = np.floor(np.nanmin(xjd))
+    norm_mask = (xjd-xjd_off < xjd_oot_l) | (xjd - xjd_off > xjd_oot_u)
     diff_flux, diff_flux_err, obj_flux, comp_flux = differential_photometry(flux, 
                                                 fluxerr, o_num, c_num, norm_mask)
 
@@ -361,18 +362,18 @@ if __name__ == "__main__":
    
     #Make plots using mean of all comparison stars
     make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-            diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, block_exposure_times,
+            diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, block_exposure_times,
             block_index_boundaries, comp_name="comparison_mean", binning=b, 
             norm_flux_lower=norm_flux_lower, norm_flux_upper=norm_flux_upper,
-            jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
     print "Mean plot finished."
     '''
     make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-            diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, block_exposure_times,
+            diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, block_exposure_times,
             block_index_boundaries, comp_name="comparison_mean_zoomed",
             binning=b, plot_lower=plot_lower, plot_upper=plot_upper,
             norm_flux_lower=norm_flux_lower, norm_flux_upper=norm_flux_upper,
-            jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
     print "Mean zoomed plot finished."
     '''
 
@@ -394,16 +395,16 @@ if __name__ == "__main__":
     flux_target_solo /= np.nanmedian(flux_target_solo[norm_mask])
     
     #Plot flux of target star by itself
-    make_lc_plots(flux_target_solo, flux_target_solo_err, jd, name, 
+    make_lc_plots(flux_target_solo, flux_target_solo_err, xjd, name, 
             block_exposure_times, block_index_boundaries, 
             comp_name="target_by_itself", binning=b, 
-            jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
     '''
-    make_lc_plots(flux_target_solo, flux_target_solo_err, jd, name, 
+    make_lc_plots(flux_target_solo, flux_target_solo_err, xjd, name, 
             block_exposure_times,
             block_index_boundaries, comp_name="_target_by_itself_zoomed", 
             binning=b, plot_lower=plot_lower, plot_upper=plot_upper,
-            jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
     '''
     print "Plot of target by itself is finished."
     
@@ -428,16 +429,16 @@ if __name__ == "__main__":
         flux_comp_solo /= np.nanmedian(flux_comp_solo[norm_mask])
         
         #Plot flux of comparison star by itself
-        make_lc_plots(flux_comp_solo, flux_comp_solo_err, jd, name, 
+        make_lc_plots(flux_comp_solo, flux_comp_solo_err, xjd, name, 
                 block_exposure_times,
                 block_index_boundaries, comp_name="comparison_"+str(cindex)+"_by_itself", 
-                binning=b, jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+                binning=b, xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
         '''
-        make_lc_plots(flux_comp_solo, flux_comp_solo_err, jd, name, 
+        make_lc_plots(flux_comp_solo, flux_comp_solo_err, xjd, name, 
                 block_exposure_times,
                 block_index_boundaries, comp_name="comparison_"+str(cindex)+"_by_itself_zoomed", 
                 binning=b, plot_lower=plot_lower, plot_upper=plot_upper,
-                jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+                xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
         '''
         print "Plot of comp star %i by itself is finished." % cindex
 
@@ -456,22 +457,22 @@ if __name__ == "__main__":
 
         #Plot differential flux of object with comparison star
         make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-                diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, 
+                diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
                 block_exposure_times,block_index_boundaries, 
                 comp_name="comparison_"+str(cindex), binning=b, 
                 norm_flux_lower=norm_flux_lower,
                 norm_flux_upper=norm_flux_upper,
-                jd_oot_l=jd_oot_l,jd_oot_u=jd_oot_u)
+                xjd_oot_l=xjd_oot_l,xjd_oot_u=xjd_oot_u)
 
         '''
         make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-                diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, 
+                diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
                 block_exposure_times,
                 block_index_boundaries, comp_name="comparison_"+str(cindex)+"_zoomed", 
                 binning=b, plot_lower=plot_lower, plot_upper=plot_upper,
                 norm_flux_lower=norm_flux_lower,
                 norm_flux_upper=norm_flux_upper,
-                jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+                xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
         '''
         print "Comparison plot for comp star %i is finished." % cindex
         
@@ -497,21 +498,21 @@ if __name__ == "__main__":
 
             #Plot differential flux
             make_lc_plots(diff_flux_other[sn_max_bkg_a,sn_max_bkg_b],
-                    diff_flux_other_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, 
+                    diff_flux_other_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
                     block_exposure_times, block_index_boundaries, 
                 comp_name="comparison_"+str(cindex)+"_vs_other_comps", 
                 binning=b, norm_flux_lower=norm_flux_lower,
                 norm_flux_upper=norm_flux_upper,
-                jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+                xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
             '''
             make_lc_plots(diff_flux_other[sn_max_bkg_a,sn_max_bkg_b],
-                    diff_flux_other_err[sn_max_bkg_a,sn_max_bkg_b], jd, name, 
+                    diff_flux_other_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
                     block_exposure_times, block_index_boundaries, 
                     comp_name="comparison_"+str(cindex)+"_vs_other_comps_zoomed", 
                 binning=b, norm_flux_lower=norm_flux_lower,
                 norm_flux_upper=norm_flux_upper,
                 plot_lower=plot_lower, plot_upper=plot_upper,
-                jd_oot_l=jd_oot_l, jd_oot_u=jd_oot_u)
+                xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
             '''
             print ("Comparison plot of comp star %i vs mean of other comparisons"\
                      " is finished." % cindex)

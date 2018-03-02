@@ -67,7 +67,7 @@ def create_calframes(files, verbose=False):
     fitsio.write(join(outdir, "bias.fits"), bias_mean)
 
     #print bias_frames.shape
-    print "Frame size: %s" %bias_mean.shape
+    print bias_mean.shape
 
     if verbose: print "Bias calibration frame saved to %s (%i exposures)." % (join(outdir,
     "bias.fits"), bias_frames.shape[0] )  

@@ -43,6 +43,7 @@ def run_phot(dir_, name):
     fluxerr_store = []
     jd_store = []
     hjd_store = []
+    bjd_store = []
     pos_store = []
     fwhm_store = []
     frame_shift_store = []
@@ -111,6 +112,11 @@ def run_phot(dir_, name):
         except:
             #Older version of reduction pipeline does not calculate HJD
             hjd = np.nan
+        try:
+            bjd = f[0].read_header()["BJD"]
+        except:
+            #Older version of reduction pipeline does not calculate BJD
+            bjd = np.nan
         exp = f[0].read_header()["EXPOSURE"]
         gain = f[0].read_header()['PREAMP']
         binfactor = f[0].read_header()['VBIN']
@@ -227,6 +233,7 @@ def run_phot(dir_, name):
                 fluxerr_store.append(fluxerr/exp)
                 jd_store.append(jd)
                 hjd_store.append(hjd)
+                bjd_store.append(bjd)
                 if (ii == 32 and jj == 3 and count == 1) :
                     star_loc_plot(path.join(dir_, name +'_field.png'), data_sub, 
                             x_rad, y_rad)
@@ -279,12 +286,13 @@ def run_phot(dir_, name):
     #Check data has not been mixed up during reshaping
     assert test1a.all() == test1b.all()
     assert test2a.all() == test2b.all()
-    print "Flux array shape: %s" %flux_store.shape
+    print flux_store.shape
     
     #Stack lists to form arrays
     bkg_flux_store = np.vstack(bkg_flux_store)
     jd_store = np.vstack(jd_store)
     hjd_store = np.vstack(hjd_store)
+    bjd_store = np.vstack(bjd_store)
     fwhm_store = np.hstack(fwhm_store)
     pos_store = np.hstack(pos_store)
     frame_shift_store = np.vstack(frame_shift_store)
@@ -303,10 +311,15 @@ def run_phot(dir_, name):
     hjd_store = hjd_store.reshape((hjd_store.shape[0]/flux_store.shape[2], 
         flux_store.shape[2]))
     hjd_store = hjd_store[:, 0]
+    bjd_store = bjd_store.reshape((bjd_store.shape[0]/flux_store.shape[2], 
+        flux_store.shape[2]))
+    bjd_store = bjd_store[:, 0]
 
-    #Check for older reduction versions where HJD missing
+    #Check for older versions of reduction.py where HJD/BJD missing from headers
     if np.all(hjd_store == np.nan):
-        print "HJD not found in Header. Old version of reduction pipeline used"
+        print "HJD not found in Header. Old version of reduction pipeline was used"
+    if np.all(bjd_store == np.nan):
+        print "BJD not found in Header. Old version of reduction pipeline was used"
 
     #Reshape fwhm_store so format is [bkg params, frames]
     fwhm_store = fwhm_store.reshape(fwhm_store.shape[0]/len(bsizes)/len(fsizes),
@@ -333,8 +346,9 @@ def run_phot(dir_, name):
     #Save other 1D and 2D arrays to files
     np.savetxt(path.join(dir_, name + '_jd.dat'), jd_store)
     np.savetxt(path.join(dir_, name + '_hjd.dat'), hjd_store)
+    np.savetxt(path.join(dir_, name + '_bjd.dat'), bjd_store)
     np.savetxt(path.join(dir_, name + '_bkg_flux.dat'), bkg_flux_store)
     np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
     np.savetxt(path.join(dir_, name + '_frame_shift.dat'), frame_shift_store)
     
-    print "\nCompleted photometry for %s." % name
+    print "Completed photometry for %s." % name
