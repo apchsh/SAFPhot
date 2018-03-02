@@ -76,25 +76,25 @@ def rebin(a, *args):
              ['/factor[%d]'%i for i in range(lenShape)]
     return eval(''.join(evList))
 
-def air_corr(flux, jd, jd_oot_l=99, jd_oot_u=99):
+def air_corr(flux, xjd, xjd_oot_l=99, xjd_oot_u=99):
     '''Function to remove a 2-D polynomial fit using the out of transit
     region.'''
     
     #Copy data to prevent overwriting input arrays
     flux_r = np.copy(flux)
-    jd_r = np.copy(jd)
+    xjd_r = np.copy(xjd)
 
     #Divide out residual airmass using out of transit region
-    oot = (((jd_r < jd_oot_l) | (jd_r > jd_oot_u)) & (np.isfinite(flux_r)) &
-        (np.isfinite(jd_r)))
-    poly1 = np.poly1d(np.polyfit(jd_r[oot], flux_r[oot], 2))
-    p1 = poly1(jd_r)
+    oot = (((xjd_r < xjd_oot_l) | (xjd_r > xjd_oot_u)) & (np.isfinite(flux_r)) &
+        (np.isfinite(xjd_r)))
+    poly1 = np.poly1d(np.polyfit(xjd_r[oot], flux_r[oot], 2))
+    p1 = poly1(xjd_r)
     flux_r /= p1
     return flux_r
 
-def make_lc_plots(flux, err, jd, name, block_exp_t, block_ind_bound, 
+def make_lc_plots(flux, err, xjd, name, block_exp_t, block_ind_bound, 
         comp_name="mean", binning=150, norm_flux_lower=0, norm_flux_upper=99,
-        plot_lower=None, plot_upper=None, jd_oot_l=99, jd_oot_u=99): 
+        plot_lower=None, plot_upper=None, xjd_oot_l=99, xjd_oot_u=99): 
     '''Main fuction to perform the plotting of the lightcurves. Takes in
     a flux and jd array as well as some parameters for the binning and 
     clipping to be performed on the lightcurve. A comparison star name
@@ -103,21 +103,21 @@ def make_lc_plots(flux, err, jd, name, block_exp_t, block_ind_bound,
     #Copy data to prevent overwriting input arrays
     plot_flux = np.copy(flux)
     plot_err = np.copy(err)
-    plot_jd = np.copy(jd)
+    plot_xjd = np.copy(xjd)
 
     #Check sizes are the same
-    assert(plot_flux.shape == plot_jd.shape)
-    assert(plot_err.shape == plot_jd.shape)
+    assert(plot_flux.shape == plot_xjd.shape)
+    assert(plot_err.shape == plot_xjd.shape)
 
-    #Remove offset from jd
-    off = np.floor(np.min(plot_jd))
-    jd_o = plot_jd - off    
+    #Remove offset from xjd
+    off = np.floor(np.min(plot_xjd))
+    xjd_o = plot_xjd - off    
     
     #Airmass correct flux
-    #plot_flux = air_corr(plot_flux, jd_o, jd_oot_l, jd_oot_u)
+    #plot_flux = air_corr(plot_flux, xjd_o, xjd_oot_l, xjd_oot_u)
 
     #Save data to FITS file
-    save_data_fits_err(plot_jd, plot_flux, plot_err, name, comp_name)
+    save_data_fits_err(plot_xjd, plot_flux, plot_err, name, comp_name)
     
     #Clip outliers
     plot_flux[(plot_flux > norm_flux_upper) | (plot_flux < norm_flux_lower)] = np.nan
@@ -127,23 +127,23 @@ def make_lc_plots(flux, err, jd, name, block_exp_t, block_ind_bound,
 
     #bin data
     flux_bin = bin_to_size(plot_flux, binning, block_exp_t, block_ind_bound, mask)
-    jd_bin = bin_to_size(jd_o, binning, block_exp_t, block_ind_bound, mask)
+    xjd_bin = bin_to_size(xjd_o, binning, block_exp_t, block_ind_bound, mask)
 
     #Save binned data to FITS file
-    save_data_fits(jd_bin+off, flux_bin, name, comp_name + "_bin")
+    save_data_fits(xjd_bin+off, flux_bin, name, comp_name + "_bin")
 
     #Set up plot
     plt.cla()
     plt.figure(figsize=(8,6), dpi=100)
     
     #Plot unbinned data
-    plt.scatter(jd_o, plot_flux, alpha=0.5, zorder=1, c='b')
+    plt.scatter(xjd_o, plot_flux, alpha=0.5, zorder=1, c='b')
     
     #Plot binned data
-    plt.scatter(jd_bin, flux_bin, zorder=2, c='r')
+    plt.scatter(xjd_bin, flux_bin, zorder=2, c='r')
     
     #Labels, titles and scaling
-    oot_mask = ((jd_bin < jd_oot_l) | (jd_bin > jd_oot_u))
+    oot_mask = ((xjd_bin < xjd_oot_l) | (xjd_bin > xjd_oot_u))
     frms = (np.nanstd(flux_bin[oot_mask], ddof=1) /
         np.nanmedian(flux_bin[oot_mask]))
     plt.title(name + ', FRMS: %7.5f' % frms)
@@ -160,21 +160,21 @@ def make_lc_plots(flux, err, jd, name, block_exp_t, block_ind_bound,
     plt.savefig(png_name, bbox_inches="tight")
     plt.close()
 
-def save_data_fits(jd, flux, file_name, comp_name):
+def save_data_fits(xjd, flux, file_name, comp_name):
     '''Function to save the data as a fits file usings the astropy.io.fits
     library a.k.a PyFits.'''
 
     #Save data as FITS
-    t_out = Table([jd, flux], names=('HJD', 'Relative flux'))
+    t_out = Table([xjd, flux], names=('HJD', 'Relative flux'))
     fits_name = join(dir_, file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
-def save_data_fits_err(jd, flux, err, file_name, comp_name):
+def save_data_fits_err(xjd, flux, err, file_name, comp_name):
     '''Function to save the data as a fits file usings the astropy.io.fits
     library a.k.a PyFits.'''
 
     #Save data as FITS
-    t_out = Table([jd, flux, err], names=('HJD', 'Relative flux', 'Err'))
+    t_out = Table([xjd, flux, err], names=('HJD', 'Relative flux', 'Err'))
     fits_name = join(dir_, file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
