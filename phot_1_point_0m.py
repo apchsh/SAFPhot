@@ -243,8 +243,6 @@ def run_phot(dir_, name):
         sys.stdout.write("\r[{0}{1}] {2:5.1f}% - {3:02}h:{4:02}m:{05:.2f}s".
              format('#' * nn, ' ' * (meter_width - nn), 100*float(count)/n_steps,h,m,s))
     
-    print "\nCompleted photometry for %s. Writing data..." % name
-    
     #Stack flux frames and store
     flux_store = np.dstack(flux_store)
     fluxerr_store = np.dstack(fluxerr_store)
@@ -281,7 +279,7 @@ def run_phot(dir_, name):
     #Check data has not been mixed up during reshaping
     assert test1a.all() == test1b.all()
     assert test2a.all() == test2b.all()
-    print flux_store.shape
+    print "Flux array shape: %s" %flux_store.shape
     
     #Stack lists to form arrays
     bkg_flux_store = np.vstack(bkg_flux_store)
@@ -339,4 +337,4 @@ def run_phot(dir_, name):
     np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
     np.savetxt(path.join(dir_, name + '_frame_shift.dat'), frame_shift_store)
     
-    print "Complete."
+    print "\nCompleted photometry for %s." % name

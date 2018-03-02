@@ -59,7 +59,7 @@ def create_calframes(files, verbose=False):
     outdir = join(files.dir_, "calframes/") 
     if not exists(outdir): makedirs(outdir)
 
-    if verbose: print "Default output dir is %s" % outdir
+    #if verbose: print "Default output dir is %s" % outdir
 
     #MAKE MASTER BIAS
     bias_frames = stack_fits(files.bias)
@@ -67,7 +67,7 @@ def create_calframes(files, verbose=False):
     fitsio.write(join(outdir, "bias.fits"), bias_mean)
 
     #print bias_frames.shape
-    print bias_mean.shape
+    print "Frame size: %s" %bias_mean.shape
 
     if verbose: print "Bias calibration frame saved to %s (%i exposures)." % (join(outdir,
     "bias.fits"), bias_frames.shape[0] )  
@@ -97,8 +97,8 @@ def create_calframes(files, verbose=False):
         fitsio.write(flat_out, master_flat)
         calframes[flt] = master_flat
 
-        if verbose: print "Normalised flat calibration frame saved to %s (%i \
-        exposures)" % (flat_out, flat_stack.shape[0])
+        if verbose: print "Normalised flat calibration frame saved to %s \
+                (%i exposures)" % (flat_out, flat_stack.shape[0])
 
     return calframes
 

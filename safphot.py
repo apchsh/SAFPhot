@@ -43,7 +43,7 @@ if __name__ == '__main__':
         #Create the calibration master files (returns dict of frames)
         calframes = red.create_calframes(files, verbose=True)
 
-        print files
+        #print files
 
         #Unpack + reduce the files
         up.unpack_reduce(files, calframes, verbose=True)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         dir_ = join(args.d[0], 'reduction/')
         for root, dirs, files in os.walk(dir_):
             for item in dirs:
-                print "Processing photometry on %s" % item
+                print "Processing frames for photometry on %s" % item
                 
                 #Load the correct version of phot depending on the telescope
                 if args.t[0] in ('1.9'):

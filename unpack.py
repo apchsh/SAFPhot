@@ -87,7 +87,7 @@ def unpack_reduce(files, calframes, verbose=True):
     for file_, target, filt in zip(files.target, files.target_name,
             files.target_filter):    
 
-        if verbose: print "Processing %s: %s " % (target, file_)
+        if verbose: print "Unpacking %s: %s " % (target, file_)
 
         #Create directory within reduction subfolder
         outdir = join(master_outdir, target)
