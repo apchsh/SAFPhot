@@ -32,3 +32,4 @@ SAFPhot will produce: a calframes folder (holding the current calibration frames
 - Review binning logic. Frames with different exposure times are currently
   binned separately, creating a discontinuity. Use times to determine binning?
 - Add output plots to plot_comp_phot such as FWHM
+- Save chosen aperture sizes and bkg parms used in phot.py to a file so they can be read in by plot.py
