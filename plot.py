@@ -147,7 +147,7 @@ def make_lc_plots(flux, err, xjd, name, block_exp_t, block_ind_bound,
     frms = (np.nanstd(flux_bin[oot_mask], ddof=1) /
         np.nanmedian(flux_bin[oot_mask]))
     plt.title(name + ', FRMS: %7.5f' % frms)
-    plt.xlabel('HJD - %d' %off)
+    plt.xlabel('BJD - %d' %off)
     plt.ylabel('Relative flux')
     
     if (plot_upper is None) and (plot_lower is None):
@@ -237,7 +237,7 @@ class Logger(object):
     def __init__(self, _dir):
         self._dir = _dir
         self.terminal = sys.stdout
-        self.log = open(join(self._dir, "plot_comp_phot.log"), "a")
+        self.log = open(join(self._dir, "phot.log"), "w")
 
     def write(self, message):
         self.terminal.write(message)
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     '''Binning
     If block_exposure_times != [1], parameter has units of time (seconds)
     If block_exposure_times == [1]  parameter is number of points'''
-    b = 2 * 60
+    b = 10 * 60
 
     #Define blocks of different exposure times
     #Leave right-most boundary open so the following two lists have the same length
