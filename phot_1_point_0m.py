@@ -235,7 +235,7 @@ def run_phot(dir_, name):
                 hjd_store.append(hjd)
                 bjd_store.append(bjd)
                 if (ii == 32 and jj == 3 and count == 1) :
-                    star_loc_plot(path.join(dir_, name +'_field.png'), data_sub, 
+                    star_loc_plot(path.join(dir_, "SAAO_", name +'_field.png'), data_sub, 
                             x_rad, y_rad)
 
                 count2 += 1
@@ -298,10 +298,10 @@ def run_phot(dir_, name):
     frame_shift_store = np.vstack(frame_shift_store)
     
     #Save flux and fluxerr to Matlab file in 4D format
-    savemat(path.join(dir_, name + '_obj_flux'), mdict={'flux': flux_store}, oned_as='row')
-    load_back = loadmat(path.join(dir_, name + '_obj_flux'))
+    savemat(path.join(dir_, "SAAO_", name + '_obj_flux'), mdict={'flux': flux_store}, oned_as='row')
+    load_back = loadmat(path.join(dir_, "SAAO_", name + '_obj_flux'))
     assert np.all(flux_store == load_back['flux'])
-    savemat(path.join(dir_, name + '_obj_flux_err'), mdict={'fluxerr': fluxerr_store}, 
+    savemat(path.join(dir_, "SAAO_", name + '_obj_flux_err'), mdict={'fluxerr': fluxerr_store}, 
         oned_as='row')
 
     #Remove duplicate jd entries due to background parameter sampling loops
@@ -337,18 +337,18 @@ def run_phot(dir_, name):
     # format currently [x/y, frames, bkg, objs], swap 2 axes for desired format
     pos_store = np.swapaxes(pos_store, 1, 3)
     #Save centroid positions as matlab file to preserve ndim format
-    savemat(path.join(dir_, name + '_centroid_pos'), mdict={'centroid_pos': pos_store}, 
+    savemat(path.join(dir_, "SAAO_", name + '_centroid_pos'), mdict={'centroid_pos': pos_store}, 
             oned_as='row')
 
     # Swap axes for frame_shift_store so format is [x/y, frames]
     frame_shift_store = np.swapaxes(frame_shift_store, 0, 1)
 
     #Save other 1D and 2D arrays to files
-    np.savetxt(path.join(dir_, name + '_jd.dat'), jd_store)
-    np.savetxt(path.join(dir_, name + '_hjd.dat'), hjd_store)
-    np.savetxt(path.join(dir_, name + '_bjd.dat'), bjd_store)
-    np.savetxt(path.join(dir_, name + '_bkg_flux.dat'), bkg_flux_store)
-    np.savetxt(path.join(dir_, name + '_fwhm.dat'), fwhm_store)
-    np.savetxt(path.join(dir_, name + '_frame_shift.dat'), frame_shift_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_jd.dat'), jd_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_hjd.dat'), hjd_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_bjd.dat'), bjd_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_bkg_flux.dat'), bkg_flux_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_fwhm.dat'), fwhm_store)
+    np.savetxt(path.join(dir_, "SAAO_",name + '_frame_shift.dat'), frame_shift_store)
     
     print "Completed photometry for %s." % name

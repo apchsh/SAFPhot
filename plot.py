@@ -156,7 +156,7 @@ def make_lc_plots(flux, err, xjd, name, block_exp_t, block_ind_bound,
         plt.ylim((plot_lower, plot_upper))
 
     #Save plot as png
-    png_name = join(dir_,name + '_%s.png' % comp_name) 
+    png_name = join(dir_,"SAAO_",name + '_%s.png' % comp_name) 
     plt.savefig(png_name, bbox_inches="tight")
     plt.close()
 
@@ -166,7 +166,7 @@ def save_data_fits(xjd, flux, file_name, comp_name):
 
     #Save data as FITS
     t_out = Table([xjd, flux], names=('HJD', 'Relative flux'))
-    fits_name = join(dir_, file_name + '_%s.fits' % comp_name) 
+    fits_name = join(dir_, "SAAO_", file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
 def save_data_fits_err(xjd, flux, err, file_name, comp_name):
@@ -175,7 +175,7 @@ def save_data_fits_err(xjd, flux, err, file_name, comp_name):
 
     #Save data as FITS
     t_out = Table([xjd, flux, err], names=('HJD', 'Relative flux', 'Err'))
-    fits_name = join(dir_, file_name + '_%s.fits' % comp_name) 
+    fits_name = join(dir_, "SAAO_", file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
 def differential_photometry(i_flux, i_err, obj_index, comp_index, norm_mask):
@@ -237,7 +237,7 @@ class Logger(object):
     def __init__(self, _dir):
         self._dir = _dir
         self.terminal = sys.stdout
-        self.log = open(join(self._dir, "phot.log"), "w")
+        self.log = open(join(self._dir, "SAAO_phot.log"), "w")
 
     def write(self, message):
         self.terminal.write(message)
