@@ -169,7 +169,7 @@ def save_data_fits(xjd, flux, file_name, comp_name):
     library a.k.a PyFits.'''
 
     #Save data as FITS
-    t_out = Table([xjd, flux], names=('HJD', 'Relative flux'))
+    t_out = Table([xjd, flux], names=('BJD', 'Relative flux'))
     fits_name = join(dir_, "SAAO_"+ file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
@@ -178,7 +178,7 @@ def save_data_fits_err(xjd, flux, err, file_name, comp_name):
     library a.k.a PyFits.'''
 
     #Save data as FITS
-    t_out = Table([xjd, flux, err], names=('HJD', 'Relative flux', 'Err'))
+    t_out = Table([xjd, flux, err], names=('BJD', 'Relative flux', 'Err'))
     fits_name = join(dir_, "SAAO_"+ file_name + '_%s.fits' % comp_name) 
     t_out.write(fits_name, overwrite=True)
 
