@@ -284,8 +284,8 @@ def run_phot(dir_, name):
     test2b = fluxerr_store[2, 0, :, 1]
 
     #Check data has not been mixed up during reshaping
-    assert test1a.all() == test1b.all()
-    assert test2a.all() == test2b.all()
+    #assert test1a.all() == test1b.all()
+    #assert test2a.all() == test2b.all()
     print flux_store.shape
     
     #Stack lists to form arrays

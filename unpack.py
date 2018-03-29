@@ -76,7 +76,7 @@ def convert_jd_bjd(jd, header, loc):
     bjd = times.tdb + ltt_bary
     return bjd.jd
 
-def unpack_reduce(files, calframes, verbose=True):
+def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
 
     #prepare for unpacking process
     master_outdir = join(files.dir_ , 'reduction') 
@@ -117,6 +117,10 @@ def unpack_reduce(files, calframes, verbose=True):
 
             newtime = correct_time(temp_header, count)        
             temp_header['JD'] = newtime.jd[0]
+
+            if (ra is not None) and (dec is not None):
+                temp_header['OBJRA'] = ra
+                temp_header['OBJDEC'] = dec
             temp_header['HJD'] = convert_jd_hjd(newtime.jd[0], temp_header, loc)
             temp_header['BJD'] = convert_jd_bjd(newtime.jd[0], temp_header, loc)
 
