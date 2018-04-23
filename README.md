@@ -19,17 +19,15 @@ SAFPhot will produce: a calframes folder (holding the current calibration frames
 ## ToDo - Version 0.1 
 
 - Add an end-to-end test to the code with examples from the 1.0m and 1.9m telescope header files. Add other tests as appropriate. 
-- Review new files which have been added, to see if the code can be better organised. 
 - Add functionality in photsort.py to continue from a partially completed run of SAFPhot. In other words don't re-run all processing.
-- Review output format of the flux files. Combine into FITS megafiles? 
+- Review mandatory vs optional arguments so safphot can be run on reduced
+  images from other programs.
+- Review output format of all files. Consolidate as much as possible, particularly main output file from plot.py. Combine flux into FITS megafiles? 
 - Check compatability with latest DONUTS version. 
 - Add comments _everywhere_. 
-- Review and consolidate plotting scripts. 
-- Update phot file to read in BJD from headers and use as default time format
-  throughout but preserving all formats in the final output file
-- Consolidate phot files for each telescope into a single file but with correct 
-  plate scales and aperture radii used at runtime, depending on the telescope
-- Review binning logic. Frames with different exposure times are currently
-  binned separately, creating a discontinuity. Use times to determine binning?
-- Add output plots to plot_comp_phot such as FWHM
-- Save chosen aperture sizes and bkg parms used in phot.py to a file so they can be read in by plot.py
+- Remove need for separate phot files for each telescope by defining default plate scales, background params and aperture radii in a file. Also create optional arguments to let user specify their own at runtime. Save the values used to a file for downstream use by plot.py
+- Review binning logic. Currently binning relies on user specifying frame
+  intervals and corresponding exposure times. Use header keyword to determine binning?
+- Create subplot pdf of most important plots and add plots to show systematics e.g. FWHM, background, CCDX, CCDY, comparison-X vs comparison-Y residuals etc
+- In phot.py, create separate ingress and egress times for expected vs actual so predicted times can still be shown but highest S/N can use more accurate values.
+  determined by user.
