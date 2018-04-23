@@ -31,3 +31,5 @@ SAFPhot will produce: a calframes folder (holding the current calibration frames
 - Create subplot pdf of most important plots and add plots to show systematics e.g. FWHM, background, CCDX, CCDY, comparison-X vs comparison-Y residuals etc
 - In phot.py, create separate ingress and egress times for expected vs actual so predicted times can still be shown but highest S/N can use more accurate values.
   determined by user.
+- In phot.py, modify comparison ensamble to use weighted sum/average according
+  to flux errors
