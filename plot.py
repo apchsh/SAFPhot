@@ -143,8 +143,10 @@ def make_lc_plots(flux, err, xjd, name, block_exp_t, block_ind_bound,
     plt.scatter(xjd_bin, flux_bin, zorder=2, c='r')
 
     #Plot expected ingress/egress
-    plt.axvline(x=xjd_oot_l, c='g')
-    plt.axvline(x=xjd_oot_u, c='g')
+    if xjd_oot_l is not 99:
+        plt.axvline(x=xjd_oot_l, c='g')
+    if xjd_oot_u is not 99:
+        plt.axvline(x=xjd_oot_u, c='g')
 
     #Labels, titles and scaling
     oot_mask = ((xjd_bin < xjd_oot_l) | (xjd_bin > xjd_oot_u))

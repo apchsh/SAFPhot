@@ -14,7 +14,7 @@ from os.path import join
 
 if __name__ == '__main__':
 
-    #Collect arguments from command line
+    #Parse arguments from command line
     parser = argparse.ArgumentParser(
         description='Reduction and photometry pipeline for SHOC data')
     parser.add_argument('camera', metavar='camera', help='Specify the SHOC camera used',
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('telescope', metavar='telescope', 
             help='Specify the telescope used (m): [1.0, 1.9]',
             type=str, action='store')
-    parser.add_argument('dir_in', metavar='input_dir', help='Input directory',
+    parser.add_argument('dir_in', metavar='dir_in', help='Input directory',
             type=str, action='store')
     parser.add_argument('mode', metavar='mode', 
             help='Mode: [reduction, photometry, both]',type=str, action='store')
