@@ -3,7 +3,6 @@
 ###############################################################################
 
 import sys
-#sys.path.append("/home/a/apc34/")
 import fitsio
 import sep
 import numpy as np
@@ -34,49 +33,91 @@ def star_loc_plot(name, data, x, y):
     plt.savefig(name, bbox_inches="tight")
     plt.close('all')
 
+def build_obj_cat(first, thresh, bw, fw):
+    
+    #Get background image  
+    bkg = sep.Background(first, bw=bw, bh=bw, fw=fw, fh=fw)
+
+    #Subtract the background
+    first_sub = first - bkg.back() 
+
+    #Extract sources to use as object catalogue
+    objects = sep.extract(first_sub, thresh=thresh, 
+            err=bkg.globalrms)
+
+    #Get the half-width radius 
+    fwhm_ref, flags = sep.flux_radius(first_sub, objects['x'],
+            objects['y'], np.ones(len(objects['x']))*10.0, 0.5,
+            subpix=10)
+   
+    #Update the object centroid positions using sep winpos algorithm
+    x_ref, y_ref, f_ref = sep.winpos(first_sub, objects['x'], 
+            objects['y'], fwhm_ref*0.424, subpix=10)
+    '''
+    #Or alternatively just use Donuts positions without winpos refinement
+    x_ref = objects['x']
+    y_ref = objects['y']
+    '''
+    
+    return x_ref, y_ref
+
 def run_phot(dir_, name):
 
-    #Initialise variables to store data
-    bkg_flux_store = []
-    #all_bflux = []
-    flux_store = []
-    fluxerr_store = []
-    jd_store = []
-    hjd_store = []
-    bjd_store = []
-    pos_store = []
-    fwhm_store = []
-    frame_shift_store = []
+    #Define background box sizes to use
+    bsizes = [16, 32, 64]
 
+    #Define background filter widths to use
+    fsizes = range(5)
+
+    #Define aperture radii to use
+    radii = np.arange(2.0, 6.0, 0.1)
+
+    #Define platescale for seeing calculation
+    platescale = 0.167 #arcsec / pix
+    
+    #Define source detection threshold
+    thresh = 7.0
+    
     #Get science images
     file_dir_ = dir_ + name + '/'
     fits = sorted(glob(file_dir_ + "*.fits")) 
-    n_steps = len(fits)  
- 
-    print ("%d frames" %n_steps)
+    print ("%d frames" %len(fits))
 
-    #Define background box sizes to try
-    bsizes = [16, 32, 64]
+    #Load first image
+    with fitsio.FITS(fits[0]) as fi:
+        first = fi[0][:, :]
 
-    #Define background filter widths to try
-    fsizes = range(5)
+    #Get object catalogue x and y positions
+    x_ref, y_ref = build_obj_cat(first, thresh, 32, 3)
 
-    #aperture radii to try
-    radii = np.arange(2.0, 6.0, 0.1)
-
-    #Platescale for seeing calculation
-    platescale = 0.167 #arcsec / pix
+    #Tile list of aperture radii per object in catalogue
+    rad = [] 
+    for z  in range(0, len(x_ref)):
+        rad.append(radii)
     
-    #Open first image and load data
-    fi = fitsio.FITS(fits[0])
-    first = fi[0][:, :]
-    fi.close()
-
     #Define aperture positions for background flux measurement
     lim_x = first.shape[0]
     lim_y = first.shape[1]
     bapp_x = [uniform(0.05*lim_x, 0.95*lim_x) for n in range(100)]
     bapp_y = [uniform(0.05*lim_y, 0.95*lim_y) for n in range(100)]
+    
+    #Initialise variables to store data
+    '''4D array structure: [apertures, objects, bkg_params, frames]'''
+    flux_store = np.empty([radii.shape[0], len(x_ref), bsizes*fsizes, len(fits)])
+    fluxerr_store = np.empty([radii.shape[0], len(x_ref), bsizes*fsizes, len(fits)])
+    
+    '''3D array structure: [bkg_apertures, bkg_params, frames]'''
+    bkg_flux_store = np.empty([len(bapp_x), bsizes*fsizes, len(fits)])
+    
+    '''2D array structure: [objects, frames]'''
+    pos_store = np.empty([len(x_ref), len(fits)])
+    
+    '''1D array structure: [frames]'''
+    jd_store = np.empty([len(fits)])
+    hjd_store = np.empty([len(fits)])
+    bjd_store = np.empty([len(fits)])
+    fwhm_store = np.empty([len(fits)])
+    frame_shift_store = np.empty([len(fits)])
 
     #Create Donuts object using first image as reference
     d = Donuts(
@@ -98,29 +139,33 @@ def run_phot(dir_, name):
     #Iterate through each reduced science image
     for count, file_  in enumerate(fits): 
                
+        #Store frame offset wrt ref image
         if count != 1:
             #Calculate offset from reference image
             shift_result = d.measure_shift(file_)
-            frame_shift_store.append([(shift_result.x).value, (shift_result.y).value])
+            frame_shift_store[count-1] = [(shift_result.x).value, (shift_result.y).value]
+        else:
+            frame_shift_store[count-1] = [0,0]
 
-        #Load data from image
-        f = fitsio.FITS(file_)
-        data = f[0][:, :]
-        jd = f[0].read_header()["JD"]
-        try:
-            hjd = f[0].read_header()["HJD"]
-        except:
-            #Older version of reduction pipeline does not calculate HJD
-            hjd = np.nan
-        try:
-            bjd = f[0].read_header()["BJD"]
-        except:
-            #Older version of reduction pipeline does not calculate BJD
-            bjd = np.nan
-        exp = f[0].read_header()["EXPOSURE"]
-        gain = f[0].read_header()['PREAMP']
-        binfactor = f[0].read_header()['VBIN']
-        f.close() 
+        #Load image
+        with fitsio.FITS(file_) as f:
+            
+            #Load tabular data from image
+            data = f[0][:, :]
+            
+            #Load header data from image
+            jd = f[0].read_header()["JD"]
+            try:
+                hjd = f[0].read_header()["HJD"]
+            except:
+                hjd = np.nan
+            try:
+                bjd = f[0].read_header()["BJD"]
+            except:
+                bjd = np.nan
+            exp = f[0].read_header()["EXPOSURE"]
+            gain = f[0].read_header()['PREAMP']
+            binfactor = f[0].read_header()['VBIN']
     
         #Iterate through background box sizes
         for ii in bsizes:
@@ -132,8 +177,6 @@ def run_phot(dir_, name):
 
                 #Save background image
                 bkg_image = bkg.back()
-                #bkg_rms = bkg.rms()
-                #fitsio.write(file_.replace('.fits','.fits.bkg'), bkg_image)
 
                 #Subtract the background from data
                 data_sub = data - bkg_image 
@@ -146,47 +189,27 @@ def run_phot(dir_, name):
                 #Measure background flux
                 bflux, bfluxerr, bflag = sep.sum_circle(data_sub, bapp_x, bapp_y,
                             4.0, err=bkg.globalrms, mask=segmap_bkg, gain=gain)
-
-                #Get mean of all background flux measurements
-                #all_bflux.append(bflux/exp)
-                bflux = np.nanmedian(bflux)
+                
+                ####### UP TO HERE ##########
+                #############################
+                #############################
 
                 #Store background flux
                 bkg_flux_store.append(bflux/exp)
                 
                 if count2 == 0:
                     #Extract objects to use as catalogue, normal thresh=9.0
-                    objects, segmap = sep.extract(data_sub, thresh=7.0, err=bkg.globalrms,
-                            segmentation_map=True)
+                    objects, segmap = sep.extract(data_sub, thresh=thresh,
+                            err=bkg.globalrms, segmentation_map=True)
 
-                    #Get the half width radius 
-                    fwhm_ref, flags = sep.flux_radius(data_sub, objects['x'], objects['y'], \
-                            np.ones(len(objects['x']))*10.0, 0.5, subpix=10)
-
-                    #Store the fwhm result 
-                    fwhm_store.append(np.nanmean(fwhm_ref))
-                   
-                    #Update the object centroid positions using sep winpos algorithm
-                    x_ref,y_ref,f_ref = sep.winpos(data_sub, objects['x'], objects['y'], \
-                            fwhm_ref*0.424, subpix=10)
-                    
-                    '''
-                    #Or alternatively just use Donuts positions
-                    x_ref = objects['x']
-                    y_ref = objects['y']
-                    '''
-
-                    '''Prepare lists and arrays of radii and centroid
-                    positions'''
-                    #put range of radii into list, once per object in catalogue
-                    rad = [] 
-                    for z  in range(0, len(x_ref)):
-                        rad.append(radii)
 
                     #Accurate x and y already know so no kneed to refine as is
                     #done for subsequent frames
                     x_pos = x_ref
                     y_pos = y_ref
+    
+                    #Store the fwhm result 
+                    fwhm_store.append(np.nanmean(fwhm_ref))
                 
                 else:
                     #Adjust centroid positions using Donuts output to allow for
@@ -195,14 +218,14 @@ def run_phot(dir_, name):
                     y = y_ref - (shift_result.y).value
                     
                     #Get the half width radius 
-                    fwhm, flags = sep.flux_radius(data_sub, x, y, \
+                    fwhm, flags = sep.flux_radius(data_sub, x, y,
                             np.ones(len(x))*10.0, 0.5, subpix=10)
 
                     #Store the fwhm result 
                     fwhm_store.append(np.nanmean(fwhm))
                     
                     #Update the object centroid positions using sep winpos algorithm
-                    x_pos,y_pos,f = sep.winpos(data_sub, x, y, \
+                    x_pos,y_pos,f = sep.winpos(data_sub, x, y,
                             fwhm*0.424, subpix=10)
                     
                     '''
@@ -235,8 +258,8 @@ def run_phot(dir_, name):
                 hjd_store.append(hjd)
                 bjd_store.append(bjd)
                 if (ii == 32 and jj == 3 and count == 1) :
-                    star_loc_plot(path.join(dir_, "SAAO_"+ name +'_field.png'), data_sub, 
-                            x_rad, y_rad)
+                    star_loc_plot(path.join(dir_, "SAAO_"+ name +'_field.png'),
+                            data_sub, x_rad, y_rad)
 
                 count2 += 1
     
@@ -254,21 +277,6 @@ def run_phot(dir_, name):
     flux_store = np.dstack(flux_store)
     fluxerr_store = np.dstack(fluxerr_store)
     
-    #Reformat background residual flux for all apertures per frame
-    '''
-    all_bflux = np.dstack(all_bflux)
-    all_bflux = all_bflux.reshape(all_bflux.shape[0], all_bflux.shape[1],
-            all_bflux.shape[2]/(len(bsizes)*len(fsizes)), len(bsizes)*len(fsizes))
-    all_bflux = np.swapaxes(all_bflux, 2, 3)
-    savemat(path.join(dir_, name + '_all_bflux.dat'), 
-            mdict={'all_bflux': all_bflux}, oned_as='row')
-    '''
-
-    #Test variable. Extract flux for all bkg parameters in second image
-    bkg_iters = len(bsizes) * len(fsizes)
-    test1a = flux_store[2, 0, 2*bkg_iters:3*bkg_iters]
-    test2a = fluxerr_store[2, 0, 2*bkg_iters:3*bkg_iters]
-
     #Reshape flux so bkg params is a new axis
     flux_store = flux_store.reshape(flux_store.shape[0], flux_store.shape[1],
             flux_store.shape[2]/(len(bsizes)*len(fsizes)), len(bsizes)*len(fsizes))
@@ -279,13 +287,6 @@ def run_phot(dir_, name):
     flux_store = np.swapaxes(flux_store, 2, 3)
     fluxerr_store = np.swapaxes(fluxerr_store, 2, 3)
 
-    #Test variable. Extract flux for all bkg params in second image
-    test1b = flux_store[2, 0, :, 1]
-    test2b = fluxerr_store[2, 0, :, 1]
-
-    #Check data has not been mixed up during reshaping
-    #assert test1a.all() == test1b.all()
-    #assert test2a.all() == test2b.all()
     print flux_store.shape
     
     #Stack lists to form arrays
@@ -298,11 +299,12 @@ def run_phot(dir_, name):
     frame_shift_store = np.vstack(frame_shift_store)
     
     #Save flux and fluxerr to Matlab file in 4D format
-    savemat(path.join(dir_, "SAAO_"+ name + '_obj_flux'), mdict={'flux': flux_store}, oned_as='row')
+    savemat(path.join(dir_, "SAAO_"+ name + '_obj_flux'), 
+            mdict={'flux': flux_store}, oned_as='row')
     load_back = loadmat(path.join(dir_, "SAAO_"+ name + '_obj_flux'))
     assert np.all(flux_store == load_back['flux'])
-    savemat(path.join(dir_, "SAAO_"+ name + '_obj_flux_err'), mdict={'fluxerr': fluxerr_store}, 
-        oned_as='row')
+    savemat(path.join(dir_, "SAAO_"+ name + '_obj_flux_err'), 
+            mdict={'fluxerr': fluxerr_store}, oned_as='row')
 
     #Remove duplicate jd entries due to background parameter sampling loops
     jd_store = jd_store.reshape((jd_store.shape[0]/flux_store.shape[2], 
@@ -314,12 +316,6 @@ def run_phot(dir_, name):
     bjd_store = bjd_store.reshape((bjd_store.shape[0]/flux_store.shape[2], 
         flux_store.shape[2]))
     bjd_store = bjd_store[:, 0]
-
-    #Check for older versions of reduction.py where HJD/BJD missing from headers
-    if np.all(hjd_store == np.nan):
-        print "HJD not found in Header. Old version of reduction pipeline was used"
-    if np.all(bjd_store == np.nan):
-        print "BJD not found in Header. Old version of reduction pipeline was used"
 
     #Reshape fwhm_store so format is [bkg params, frames]
     fwhm_store = fwhm_store.reshape(fwhm_store.shape[0]/len(bsizes)/len(fsizes),
@@ -337,8 +333,8 @@ def run_phot(dir_, name):
     # format currently [x/y, frames, bkg, objs], swap 2 axes for desired format
     pos_store = np.swapaxes(pos_store, 1, 3)
     #Save centroid positions as matlab file to preserve ndim format
-    savemat(path.join(dir_, "SAAO_"+name + '_centroid_pos'), mdict={'centroid_pos': pos_store}, 
-            oned_as='row')
+    savemat(path.join(dir_, "SAAO_"+name + '_centroid_pos'),
+            mdict={'centroid_pos': pos_store}, oned_as='row')
 
     # Swap axes for frame_shift_store so format is [x/y, frames]
     frame_shift_store = np.swapaxes(frame_shift_store, 0, 1)
