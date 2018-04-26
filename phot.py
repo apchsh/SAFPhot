@@ -8,27 +8,43 @@ import sep
 import numpy as np
 import matplotlib.pyplot as plt 
 
-from astropy.io import fits as astrofits
+from astropy.io import fits
 from astropy.table import Table
 from os import path
 from glob import glob
 from random import uniform
 from donuts import Donuts
 from time import time as time_
+from scipy import ndimage
 
-def star_loc_plot(name, data, x, y):
+def rot(image, xy, angle):
+    #Rotate an imput image and set of coordinates by an angle
+    im_rot = ndimage.rotate(image,angle) 
+    org_center = (np.array(image.shape[:2][::-1])-1)/2.
+    rot_center = (np.array(im_rot.shape[:2][::-1])-1)/2.
+    xy_rot = np.empty([2, xy.shape[1]])
+    for i in range(xy.shape[1]):
+        org = xy[:,i]-org_center
+        a = np.deg2rad(angle)
+        xy_rot[:,i] = np.array([org[0]*np.cos(a) + org[1]*np.sin(a),
+            -org[0]*np.sin(a) + org[1]*np.cos(a) ] + rot_center)
+    return im_rot, xy_rot
+
+def star_loc_plot(name, data, x, y, angle):
 
     dmean = np.mean(data)
     dstd = np.std(data)
-
+    
     fig = plt.figure()
-    plt.imshow(data, vmin=dmean-1*dstd, vmax=dmean+2*dstd, cmap=plt.get_cmap('gray'))
+    data_rot, (x,y) = rot(data, np.vstack([x,y]), angle)
+    plt.imshow(data_rot, vmin=dmean-1*dstd, vmax=dmean+2*dstd,
+           cmap=plt.get_cmap('gray'))
     color_range=plt.cm.hsv(np.linspace(0,1,10))
    
     ind = x.shape[0]
-
     for i in range(0, int(ind)):
-        plt.text(x[i], y[i], "%i" % i, fontsize=16)#, color=color_range[int(ind[i])])
+        plt.text(x[i], y[i], "%i" % i, fontsize=16)
+        #, color=color_range[int(ind[i])])
             
     plt.savefig(name, bbox_inches="tight")
     plt.close('all')
@@ -59,7 +75,7 @@ def build_obj_cat(dir_, name, first, thresh, bw, fw):
     
     #Save example field image with objects numbered
     star_loc_plot(path.join(dir_, "SAAO_"+ name +'_field.png'),
-            first_sub, x_ref, y_ref)
+            first_sub, x_ref, y_ref, 180)
     
     return x_ref, y_ref
 
@@ -85,11 +101,11 @@ def run_phot(dir_, name):
 
     #Get science images
     file_dir_ = dir_ + name + '/'
-    fits = sorted(glob(file_dir_ + "*.fits")) 
-    print ("%d frames" %len(fits))
+    f_list = sorted(glob(file_dir_ + "*.fits")) 
+    print ("%d frames" %len(f_list))
 
     #Load first image
-    with fitsio.FITS(fits[0]) as fi:
+    with fitsio.FITS(f_list[0]) as fi:
         first = fi[0][:, :]
 
     #Get object catalogue x and y positions
@@ -105,35 +121,35 @@ def run_phot(dir_, name):
     #Initialise variables to store data
     '''4D array structure: [apertures, objects, bkg_params, frames]'''
     flux_store = np.empty([radii.shape[0], len(x_ref),
-        len(bsizes)*len(fsizes), len(fits)])
+        len(bsizes)*len(fsizes), len(f_list)])
     fluxerr_store = np.empty([radii.shape[0], len(x_ref),
-        len(bsizes)*len(fsizes), len(fits)])
+        len(bsizes)*len(fsizes), len(f_list)])
     flag_store = np.empty([radii.shape[0], len(x_ref),
-        len(bsizes)*len(fsizes), len(fits)])
+        len(bsizes)*len(fsizes), len(f_list)])
     
     '''3D array structure: [bkg_apertures, bkg_params, frames]'''
-    bkg_flux_store = np.empty([len(bapp_x), len(bsizes)*len(fsizes), len(fits)])
+    bkg_flux_store = np.empty([len(bapp_x), len(bsizes)*len(fsizes), len(f_list)])
     
     '''2D array structure: [objects, frames]'''
-    pos_store_x = np.empty([len(x_ref), len(fits)])
-    pos_store_y = np.empty([len(y_ref), len(fits)])
-    pos_store_donuts_x = np.empty([len(x_ref), len(fits)])
-    pos_store_donuts_y = np.empty([len(y_ref), len(fits)])
+    pos_store_x = np.empty([len(x_ref), len(f_list)])
+    pos_store_y = np.empty([len(y_ref), len(f_list)])
+    pos_store_donuts_x = np.empty([len(x_ref), len(f_list)])
+    pos_store_donuts_y = np.empty([len(y_ref), len(f_list)])
     
     '''2D array structure: [bkg_params, frames]'''
-    fwhm_store = np.empty([len(bsizes)*len(fsizes), len(fits)])
+    fwhm_store = np.empty([len(bsizes)*len(fsizes), len(f_list)])
     
     '''1D array structure: [frames]'''
-    jd_store = np.empty([len(fits)])
-    hjd_store = np.empty([len(fits)])
-    bjd_store = np.empty([len(fits)])
-    frame_shift_x_store = np.empty([len(fits)])
-    frame_shift_y_store = np.empty([len(fits)])
-    exp_store = np.empty([len(fits)])
+    jd_store = np.empty([len(f_list)])
+    hjd_store = np.empty([len(f_list)])
+    bjd_store = np.empty([len(f_list)])
+    frame_shift_x_store = np.empty([len(f_list)])
+    frame_shift_y_store = np.empty([len(f_list)])
+    exp_store = np.empty([len(f_list)])
 
     #Create Donuts object using first image as reference
     d = Donuts(
-        refimage=fits[0], image_ext=0,
+        refimage=f_list[0], image_ext=0,
         overscan_width=0, prescan_width=0,
         border=0, normalise=False,
         subtract_bkg=False)
@@ -145,7 +161,7 @@ def run_phot(dir_, name):
     start_time = time_()
 
     #Iterate through each reduced science image
-    for count, file_  in enumerate(fits): 
+    for count, file_  in enumerate(f_list): 
                
         #Store frame offset wrt reference image
         if count != 1:
@@ -264,7 +280,7 @@ def run_phot(dir_, name):
                 bkg_count += 1
     
         #Show progress meter for number of frames processed
-        n_steps = len(fits)
+        n_steps = len(f_list)
         nn = int((meter_width+1) * float(count) / n_steps)
         delta_t = time_()-start_time # time to do float(count) / n_steps % of caluculation
         time_incr = delta_t/(float(count+1) / n_steps) # seconds per increment
@@ -276,13 +292,13 @@ def run_phot(dir_, name):
    
     #Save data to file
     #Need to think abour using headers to define the dimensions
-    #TableHDu might not be what we want
-    pri = astrofits.PrimaryHDU(n)
-    flux = astrofits.TableHDU(flux_store, header=None, name="flux")
-    fluxerr = astrofits.TableHDU(fluxerr_store, header=None, name="fluxerr")
-    flags = astrofits.TableHDU(flag_store, header=None, name="flags")
-    bkgflux = astrofits.TableHDU(bkg_flux_store, header=None, name="bkgflux")
-    hdulist = astrofits.fits.HDUList([pri, flux, fluxerr, flags, bkgflux])
+    #TableHDU might not be what we want
+    pri = fits.PrimaryHDU(n)
+    flux = fits.TableHDU(flux_store, header=None, name="flux")
+    fluxerr = fits.TableHDU(fluxerr_store, header=None, name="fluxerr")
+    flags = fits.TableHDU(flag_store, header=None, name="flags")
+    bkgflux = fits.TableHDU(bkg_flux_store, header=None, name="bkgflux")
+    hdulist = fits.fits.HDUList([pri, flux, fluxerr, flags, bkgflux])
     hdulist.writeto('output_name')
 
     print "\nCompleted photometry for %s." % name
