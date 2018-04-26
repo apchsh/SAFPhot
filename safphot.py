@@ -70,7 +70,7 @@ if __name__ == '__main__':
                     ph.run_phot(dir_, item)
 
                 elif args.telescope in ('1.0', '1', '1.'):
-                    import phot_1_point_0m as ph
+                    import phot as ph
                     ph.run_phot(dir_, item)
 
                 else:
