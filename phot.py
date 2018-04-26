@@ -111,7 +111,6 @@ def run_phot(dir_, name):
     #Get object catalogue x and y positions
     x_ref, y_ref = build_obj_cat(dir_, name, first, thresh, 32, 3)
 
-    
     #Define aperture positions for background flux measurement
     lim_x = first.shape[0]
     lim_y = first.shape[1]
@@ -170,7 +169,7 @@ def run_phot(dir_, name):
             frame_shift_x_store[count-1] = (shift_result.x).value
             frame_shift_y_store[count-1] = (shift_result.y).value
         else:
-            #Frame is the reference image so now offset by definition
+            #Frame is the reference image so no offset by definition
             frame_shift_x_store[count-1] = 0
             frame_shift_y_store[count-1] = 0
 
@@ -291,7 +290,7 @@ def run_phot(dir_, name):
              format('#' * nn, ' ' * (meter_width - nn), 100*float(count)/n_steps,h,m,s))
    
     #Save data to file
-    #Need to think abour using headers to define the dimensions
+    #Need to think about using headers to define the dimensions
     #TableHDU might not be what we want
     pri = fits.PrimaryHDU(n)
     flux = fits.TableHDU(flux_store, header=None, name="flux")
