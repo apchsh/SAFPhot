@@ -1,9 +1,27 @@
 #!/usr/bin/env python
-#================================================#
-#                                                                             #
-# ========> SAFPHOT - SAAO SHOC REDUCTION AND PHOTOMETRY PIPELINE <========== #
-#                                                                             #
-#=================================================#
+
+'''
+SAFPhot - SAAO SHOC REDUCTION AND PHOTOMETRY PIPELINE
+
+An automated pipeline to produce photometry for SAAO 1m, 1.9m telescopes.
+
+This the main script to run the pipeline. Parameters that are passed into the 
+scripts are as follows: 
+
+Mandatory:
+    - Input directory: folder containing the calibration and science frames
+    - Mode: 
+
+Optional:
+    - Output directory photometry: if no directory is specified the standard scheme is used
+    - Output directory calibration: if only directory photometry is specified use that 
+    - Telescope used: 
+    - Camera used: 
+    - RA: explicit RA of the object to superseed the header value
+    - DEC: explicit DEC of the object to superseed the header value 
+
+'''
+
 import os
 import argparse
 import photsort as ps
@@ -25,8 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('dir_in', metavar='dir_in', help='Input directory',
             type=str, action='store')
     parser.add_argument('mode', metavar='mode', 
-            help='Mode: [reduction, photometry, both]',type=str, action='store')
-    
+            help='Mode: [reduction, photometry, both]',type=str, action='store')   
     parser.add_argument('--ra', 
             help='Explicit RA of object, to superseed header value',
             type=str, dest='ra')
