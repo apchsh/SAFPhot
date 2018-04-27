@@ -8,7 +8,6 @@ import sep
 import numpy as np
 import matplotlib.pyplot as plt 
 import unpack
-
 from astropy.table import Table
 from os import path
 from glob import glob
@@ -17,25 +16,33 @@ from donuts import Donuts
 from time import time as time_
 from scipy import ndimage
 
-def makeheader():
-    hlist = [{'name':'DATE-OBS', 'value':''},
-            {'name':'OBSERVER', 'value':''},
-            {'name':'OBSERVAT', 'value':''},
-            {'name':'TELESCOP', 'value':''},
-            {'name':'INSTRUMT', 'value':''},
-            {'name':'FILTERA', 'value':''},
-            {'name':'FILTERB', 'value':''},
-            {'name':'OBJECT', 'value':''},
-            {'name':'RA', 'value':''},
-            {'name':'DEC', 'value':''},
-            {'name':'EPOCH', 'value':''},
-            {'name':'EQUINOX', 'value':''}
+def makeheader(h, dateobs, observer, telescop, instrumt, filtera,
+        filterb, obj, ra, dec, epoch, equinox, platescale):
+    #Make general header for each HDU
+    hlist = [{'name':'DATE-OBS', 'value':h[dateobs],
+                    'comment':h.get_comment(dateobs)},
+            {'name':'OBSERVER', 'value':h[observer],
+                    'comment':h.get_comment(observer)},
+            {'name':'OBSERVAT', 'value':'SAAO',
+                    'comment':'Observatory'},
+            {'name':'TELESCOP', 'value':h[telescop],
+                    'comment':h.get_comment(telescop)},
+            {'name':'INSTRUMT', 'value':h[instrumt],
+                    'comment':h.get_comment(instrumt)},
+            {'name':'FILTERA', 'value':h[filtera],
+                    'comment':h.get_comment(filtera)},
+            {'name':'FILTERB', 'value':h[filterb],
+                    'comment':h.get_comment(filterb)},
+            {'name':'PLATESCL', 'value':platescale, 'comment':'arcsec/pixel'},
+            {'name':'OBJECT', 'value':h[obj], 'comment':h.get_comment(obj)},
+            {'name':'RA', 'value':h[ra], 'comment':h.get_comment(ra)},
+            {'name':'DEC', 'value':h[dec], 'comment':h.get_comment(dec)},
+            {'name':'EPOCH', 'value':h[epoch],
+                    'comment':h.get_comment(epoch)},
+            {'name':'EQUINOX', 'value':h[equinox],
+                    'comment':h.get_comment(equinox)}
             ]
     return hlist
-
-def writefits(output_name, data, header, extname):
-    with fitsio.fits(output_name, "rw") as g:
-        g.write(data, header=header, extname=extname)
 
 def rot(image, xy, angle):
     #Rotate an input image and set of coordinates by an angle
@@ -125,10 +132,11 @@ def run_phot(dir_, name):
     field_angle = 180
 
     #Define header keywords
+    hOBJECT = "OBJECT"
     hRA = "OBJRA"
     hDEC = "OBJDEC"
-    hEPOCH = "EPOCH"
-    eEQUINOX = "EQUINOX"
+    hEPOCH = "OBJEPOCH"
+    hEQUINOX = "OBJEQUIN"
     hGAIN = "PREAMP"
     hEXP = "EXPOSURE"
     hBINFAC = "VBIN"
@@ -136,19 +144,21 @@ def run_phot(dir_, name):
     hJD = "JD"
     hHJD = "HJD"
     hBJD = "BJD"
-    hOBSLAT = "LAT"
-    hOBSLONG = "LON"
-    hOBSALT = "ALT"
+    hOBSLAT = "LAT" # Needed for non-SAAO telescopes
+    hOBSLONG = "LON" # Needed for non-SAAO telescopes
+    hOBSALT = "ALT" # Needed for non-SAAO telescopes
     hOBSERVER = "OBSERVER"
-    hOBSERVAT = "OBSERVAT"
+    hOBSERVAT = "OBSERVAT" # Needed for non-SAAO telescopes
     hTELESCOP = "TELESCOP"
-    hINSTRUMT = "CAMERA"
+    hINSTRUMT = "INSTRUME"
     hFILTERA = "FILTERA"
     hFILTERB = "FILTERB"
-    HDATEOBS = "DATE-OBS"
+    hDATEOBS = "GPSSTART"
 
     #Define output file name 
     output_name = path.join(dir_, "SAAO_"+ name +'_phot.fits')
+
+    '''END OF DEFINITIONS'''
 
     #Get science images
     file_dir_ = dir_ + name + '/'
@@ -171,8 +181,6 @@ def run_phot(dir_, name):
     
     #Initialise variables to store data
     '''4D array structure: [apertures, objects, bkg_params, frames]'''
-    #dt = np.dtype([('APERTURES', 'f8'), ('OBJECTS', 'f8'),
-    #    ('BKG_PARAMS', 'f8'), ('FRAMES', 'f8')])
     flux_store = np.empty([radii.shape[0], len(x_ref),
         len(bsizes)*len(fsizes), len(f_list)])
     fluxerr_store = np.empty([radii.shape[0], len(x_ref),
@@ -185,24 +193,19 @@ def run_phot(dir_, name):
         len(bsizes)*len(fsizes), len(f_list)])
     
     '''3D array structure: [bkg_apertures, bkg_params, frames]'''
-    #dt = np.dtype([('BKG_APERTURES', 'f8'), ('BKG_PARAMS', 'f8'),
-    #    ('FRAMES', 'f8')])
     bkg_flux_store = np.empty([len(bapp_x), len(bsizes)*len(fsizes),
         len(f_list)])
     
     '''2D array structure: [objects, frames]'''
-    #dt = np.dtype([('OBJECTS', 'f8'), ('FRAMES', 'f8')])
     pos_store_x = np.empty([len(x_ref), len(f_list)])
     pos_store_y = np.empty([len(y_ref), len(f_list)])
     pos_store_donuts_x = np.empty([len(x_ref), len(f_list)])
     pos_store_donuts_y = np.empty([len(y_ref), len(f_list)])
     
     '''2D array structure: [bkg_params, frames]'''
-    #dt = np.dtype([('BKG_PARAMS', 'f8'), ('FRAMES', 'f8')])
     fwhm_store = np.empty([len(bsizes)*len(fsizes), len(f_list)])
     
     '''1D array structure: [frames]'''
-    #dt = np.dtype([('FRAMES', 'f8')])
     jd_store = np.empty([len(f_list)])
     hjd_store = np.empty([len(f_list)])
     bjd_store = np.empty([len(f_list)])
@@ -366,8 +369,34 @@ def run_phot(dir_, name):
         h, m = divmod(m, 60)
         sys.stdout.write("\r[{0}{1}] {2:5.1f}% - {3:02}h:{4:02}m:{05:.2f}s".
              format('#' * nn, ' ' * (meter_width - nn), 100*float(count)/n_steps,h,m,s))
-   
-    #Save data to file
-    #writefits(output_name, data, header, extname)
+  
+    #Get output file general header
+    hdr = makeheader(firsthdr, hDATEOBS, hOBSERVER, hTELESCOP,
+        hINSTRUMT, hFILTERA, hFILTERB, hOBJECT, hRA, hDEC, hEPOCH, hEQUINOX,
+        platescale)
+
+    #Save each data array as a HDU in FITS file
+    with fitsio.FITS(output_name, "rw") as g:
+        g.write(flux_store, header=hdr, extname="OBJ_FLUX")
+        g.write(fluxerr_store, header=hdr, extname="OBJ_FLUX_ERR")
+        g.write(flag_store, header=hdr, extname="OBJ_FLUX_FLAGS")
+        g.write(bkg_app_flux_store, header=hdr, extname="OBJ_BKG_APP_FLUX")
+        g.write(bkg_app_fluxerr_store, header=hdr,
+                extname="OBJ_BKG_APP_FLUX_ERR")
+        g.write(bkg_flux_store, header=hdr, extname="RESIDUAL_BKG_FLUX")
+        g.write(pos_store_x, header=hdr, extname="OBJ_CCD_X")
+        g.write(pos_store_y, header=hdr, extname="OBJ_CCD_Y")
+        g.write(pos_store_donuts_x, header=hdr, extname="OBJ_CCD_X_UNREFINED")
+        g.write(pos_store_donuts_y, header=hdr, extname="OBJ_CCD_Y_UNREFINED")
+        g.write(fwhm_store, header=hdr, extname="MEAN_OBJ_FWHM")
+        g.write(jd_store, header=hdr, extname="JD")
+        g.write(hjd_store, header=hdr, extname="HJD")
+        g.write(bjd_store, header=hdr, extname="BJD")
+        g.write(frame_shift_x_store, header=hdr, extname="FRAME_SHIFT_X")
+        g.write(frame_shift_y_store, header=hdr, extname="FRAME_SHIFT_Y")
+        g.write(frame_shift_y_store, header=hdr, extname="FRAME_SHIFT_Y")
+        g.write(exp_store, header=hdr, extname="EXPOSURE_TIME")
+        g.write(airmass_store, header=hdr, extname="AIRMASS")
+
 
     print "\nCompleted photometry for %s." % name
