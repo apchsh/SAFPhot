@@ -34,11 +34,11 @@ def correct_time(header, frame_num):
     header['EXPOSURE'] * 0.5, format='sec')
     return t + dt
 
-def convert_jd_hjd(jd, header, loc):
+def convert_jd_hjd(jd, ra, dec, loc):
    
     #Get RA and DEC
-    ra = header['OBJRA'].replace(" ", ":")
-    dec = header['OBJDEC'].replace(" ", ":")
+    ra = ra.replace(" ", ":")
+    dec = dec.replace(" ", ":")
 
     #Get object sky coords in correct format
     coords = coord.SkyCoord(ra, dec,
@@ -55,11 +55,11 @@ def convert_jd_hjd(jd, header, loc):
     hjd = times.utc + ltt_helio
     return hjd.jd
 
-def convert_jd_bjd(jd, header, loc):
+def convert_jd_bjd(jd, ra, dec, loc):
    
     #Get RA and DEC
-    ra = header['OBJRA'].replace(" ", ":")
-    dec = header['OBJDEC'].replace(" ", ":")
+    ra = ra.replace(" ", ":")
+    dec = dec.replace(" ", ":")
 
     #Get object sky coords in correct format
     coords = coord.SkyCoord(ra, dec,
@@ -119,10 +119,13 @@ def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
             temp_header['JD'] = newtime.jd[0]
 
             if (ra is not None) and (dec is not None):
+                #Overwrite header RA and DEC with runtime input params
                 temp_header['OBJRA'] = ra
                 temp_header['OBJDEC'] = dec
-            temp_header['HJD'] = convert_jd_hjd(newtime.jd[0], temp_header, loc)
-            temp_header['BJD'] = convert_jd_bjd(newtime.jd[0], temp_header, loc)
+            temp_header['HJD'] = convert_jd_hjd(newtime.jd[0],
+                                temp_header['OBJRA'], temp_header['OBJDEC'], loc)
+            temp_header['BJD'] = convert_jd_bjd(newtime.jd[0],
+                                temp_header['OBJRA'], temp_header['OBJDEC'], loc)
 
             fname = basename(file_).replace('.fits', '.%04d.fits' % count)
             hdu = fits.PrimaryHDU(red_data, header=temp_header)
