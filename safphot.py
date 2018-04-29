@@ -31,6 +31,7 @@ import phot as ph
 import params
 
 from os.path import join
+from os import walk
 
 if __name__ == '__main__':
 
@@ -65,12 +66,12 @@ if __name__ == '__main__':
         #run photometry
         dir_ = join(args.dir_in, 'reduction/')
         
-        for root, dirs, files in os.walk(dir_):
+        for root, dirs, files in walk(dir_):
         
             for item in dirs:
 
                 print "Processing frames for photometry on %s" % item 
-                ph.run_phot(dir_, item)
+                ph.run_phot(dir_, p, item)
 
     if args.mode not in ('both', 'reduction', 'photometry'):
 

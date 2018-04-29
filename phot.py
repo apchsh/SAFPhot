@@ -106,30 +106,30 @@ def build_obj_cat(dir_, name, first, thresh, bw, fw, angle):
     
     return x_ref, y_ref
 
-def run_phot(dir_, name):
+def run_phot(dir_, p, name):
 
     '''THE FOLLOWING DEFINITIONS NEED TO BE READ IN FROM FILE EVENTUALLY'''
     #Define background box sizes to use
-    bsizes = [16, 32, 64]
+    bsizes = np.array(p.box_size)
 
     #Define background filter widths to use
-    fsizes = range(5)
+    fsizes = np.array(p.filter_size)
 
     #Define aperture radii to use for flux measurements
-    radii = np.arange(2.0, 6.0, 0.1)
+    radii = np.array(p.radii)
 
     #Define num apertures and radius to use for bkg residuals
     bkg_rad = 4.0
     nbapps = 100
 
     #Define platescale for seeing calculation
-    platescale = 0.167 #arcsec / pix
+    platescale = p.platescale #arcsec / pix
     
     #Define source detection threshold
-    thresh = 7.0
+    thresh = p.source_thresh
    
     #Define rotation angle for field image
-    field_angle = 180
+    field_angle = p.field_angle
 
     #Define header keywords
     hOBJECT = "OBJECT"
@@ -270,7 +270,10 @@ def run_phot(dir_, name):
         hjd_store[count-1] = hjd
         bjd_store[count-1] = bjd
         exp_store[count-1] = exp
-        airmass_store[count-1] = airmass
+        if type(airmass) == float:
+            airmass_store[count-1] = airmass
+        else:
+            airmass_store[count-1] = 0.0
 
         #Initialise count of number of bkg params gone through
         bkg_count = 0

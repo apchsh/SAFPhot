@@ -70,9 +70,9 @@ class fits_sort():
             if filter_ == '': filter_ = 'WHITE'
 
             # SPLIT FILES INTO OBJECTS
-            if "BIAS" in fobstype.upper():
+            if "BIAS" in fobstype.upper() or "BIAS" in fobject.upper():
                 self.bias.append(file_) 
-            elif "FLAT" in fobstype.upper():
+            elif "FLAT" in fobstype.upper() or "FLAT" in fobject.upper():
                 self.flat.append(file_)
                 self.flat_filter.append(filter_) 
             else:

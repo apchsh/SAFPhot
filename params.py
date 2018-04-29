@@ -7,11 +7,11 @@ def get_params():
 
     #OBSERVING KEYWORDS
     params["PLATESCALE"] = 0.167 #arcsec / pix 
-    params["FIELD_ANGLE"] = 180 #rotates the example field image
+    params["FIELD_ANGLE"] = 180.0 #rotates the example field image
     
     #PHOTOMETRY KEYWORDS 
     params["RADII"] = [3.0, 3.1]
-    params["BOX_SIZE"] = [16.0, 32.0]
+    params["BOX_SIZE"] = [16, 32]
     params["FILTER_SIZE"] = [3.0] 
     params["SOURCE_THRESH"] = 7.0
 
@@ -41,7 +41,7 @@ def get_params():
     params["BJD"] = "BJD"
     params["LAT"] = 0.334
     params["LON"] = 0.334
-    params["ALT"] = 300
+    params["ALT"] = 300.0
     
     #OUTPUT KEYWORDS 
     params["OUT_DIR"] = "" #output directory, if blank the input dir is used 
@@ -51,5 +51,9 @@ def get_params():
     params["RED_PREFIX"] = "CAL_" #prefix to attach to reduction output 
 
     return Validator(params) 
+
+if __name__ == "__main__":
+
+    params = get_params()
 
 

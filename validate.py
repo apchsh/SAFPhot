@@ -20,20 +20,93 @@ class KeyMissingError(Exception):
 class KeyValueError(Exception):
     pass 
 
-def validate_back_method():
-    return True
+#Functions to validate the keywords 
+def float_positive(num):
+    
+    if type(num) == float:
+        if num >= 0:
+            return True
+        else: return False 
 
-def validate_list_int():
-    return True 
+def int_positive(num):
 
+    if type(num) == int:
+        if num >= 0:
+            return True
+    else: return False 
+    
+def list_int(list_):
+
+    result = True
+    for item in list_: 
+        if not(type(item) == int):
+            result = False 
+        
+    return result 
+
+def list_float(list_):
+    
+    result = True
+    for item in list_:
+        if not(type(item) == float):
+            result = False
+
+    return result
+
+def check_string(string):
+
+    if type(string) == str:
+        return True
+    else: return False 
+
+def string_or_float(value):
+
+    if check_string(value) or type(value) == float:
+        return True 
+    else: return False 
+
+def string_or_int(value):
+    if check_string(value) or type(value) == int:
+        return True
+    else: return False
 
 class Validator(): 
        
 
-    keylist = {"BACK_METHOD":validate_back_method(), 
-               "BOX_WIDTH":validate_list_int(),
-               "RADII":validate_list_int()}
-    
+    keylist = {"PLATESCALE":float_positive,
+               "FIELD_ANGLE":float_positive,
+               "RADII":list_float,
+               "BOX_SIZE":list_int,
+               "FILTER_SIZE":list_float,
+               "SOURCE_THRESH":float_positive,
+               "DATE-OBS":check_string, 
+               "OBSERVER":check_string,
+               "OBSERVATORY":check_string,
+               "TELESCOPE":check_string,
+               "INSTRUMENT":check_string,
+               "FILTERA":check_string,
+               "FILTERB":check_string,
+               "TARGET":check_string,
+               "EXPOSURE":check_string,
+               "RA":string_or_float,
+               "DEC":string_or_float,
+               "EPOCH":check_string,
+               "EQUINOX":check_string,
+               "VBIN":string_or_int,
+               "HBIN":string_or_int,
+               "AIRMASS":check_string, 
+               "JD":check_string,
+               "HJD":check_string,
+               "BJD":check_string,
+               "LAT":string_or_float,
+               "LON":string_or_float,
+               "ALT":string_or_float,
+               "OUT_DIR":check_string,
+               "RED_DIR":check_string,
+               "PHOT_DIR":check_string,
+               "PHOT_PREFIX":check_string,
+               "RED_PREFIX":check_string}
+
     def __init__(self, pardict): 
 
         set_pardict = set(pardict)
@@ -41,11 +114,11 @@ class Validator():
  
         if set_pardict == set_keylist: 
 
-            for key in pardict_: 
+            for key in pardict: 
 
                 if self.keylist[key](pardict[key]):
 
-                    setarrt(self, key.lower_case(), pardict[key])
+                    setattr(self, key.lower(), pardict[key])
 
                 else:
 

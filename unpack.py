@@ -129,7 +129,7 @@ def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
 
             fname = basename(file_).replace('.fits', '.%04d.fits' % count)
             hdu = fits.PrimaryHDU(red_data, header=temp_header)
-            hdu.writeto(join(outdir, fname), overwrite=True)
+            hdu.writeto(join(outdir, fname), clobber=True)
         f.close()
 
     print "Reduction and unpacking complete." 
