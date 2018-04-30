@@ -7,14 +7,16 @@ import fitsio
 import sep
 import numpy as np
 import matplotlib.pyplot as plt 
-import unpack
+import unpack # SAFPhot script
 from astropy.table import Table
-from os import path
+from os.path import join, exists
+from os import makedirs
 from glob import glob
 from random import uniform
 from donuts import Donuts
 from time import time as time_
 from scipy import ndimage
+from copy import copy
 
 def makeheader(h, dateobs, observer, telescop, instrumt, filtera,
         filterb, obj, ra, dec, epoch, equinox, platescale):
@@ -43,6 +45,17 @@ def makeheader(h, dateobs, observer, telescop, instrumt, filtera,
                     'comment':h.get_comment(equinox)}
             ]
     return hlist
+
+def append_header(h, vars_):
+    #Reverse dimension order to be consistent with FITS format
+    h_ = copy(h)
+    vars_.reverse()
+    #Add keyword for each dimension
+    for i in range(len(vars_)):
+        h_.append({'name':'VARAXIS' + str(i+1), 'value':vars_[i],
+                'comment':'variable of data axis %s'
+                %(i+1)})
+    return h_
 
 def rot(image, xy, angle):
     #Rotate an input image and set of coordinates by an angle
@@ -101,7 +114,7 @@ def build_obj_cat(dir_, name, first, thresh, bw, fw, angle):
     '''
     
     #Save example field image with objects numbered
-    star_loc_plot(path.join(dir_, "SAAO_"+ name +'_field.png'),
+    star_loc_plot(join(dir_, "SAAO_"+ name +'_field.png'),
             first_sub, x_ref, y_ref, angle)
     
     return x_ref, y_ref
@@ -155,13 +168,19 @@ def run_phot(dir_, p, name):
     hFILTERB = "FILTERB"
     hDATEOBS = "GPSSTART"
 
-    #Define output file name 
-    output_name = path.join(dir_, "SAAO_"+ name +'_phot.fits')
+    #Define output directory and file name 
+    if p.out_dir is "":
+        p.out_dir = dir_
+    out_dir = join(p.out_dir, p.phot_dir)
+    output_name = join(out_dir, p.phot_prefix + name +'_phot.fits')
 
     '''END OF DEFINITIONS'''
 
+    #Try creating directory to hold photometry files
+    if not exists(out_dir): makedirs(out_dir)
+
     #Get science images
-    file_dir_ = dir_ + name + '/'
+    file_dir_ = join(dir_, p.red_dir, name, "")
     f_list = sorted(glob(file_dir_ + "*.fits")) 
     print ("%d frames" %len(f_list))
 
@@ -169,6 +188,11 @@ def run_phot(dir_, p, name):
     with fitsio.FITS(f_list[0]) as fi:
         first = fi[0][:, :]
         firsthdr = fi[0].read_header()
+
+    #Get output file general header
+    hdr = makeheader(firsthdr, hDATEOBS, hOBSERVER, hTELESCOP,
+        hINSTRUMT, hFILTERA, hFILTERB, hOBJECT, hRA, hDEC, hEPOCH, hEQUINOX,
+        platescale)
 
     #Get object catalogue x and y positions
     x_ref, y_ref = build_obj_cat(dir_, name, first, thresh, 32, 3, field_angle)
@@ -180,7 +204,8 @@ def run_phot(dir_, p, name):
     bapp_y = [uniform(0.05*lim_y, 0.95*lim_y) for n in range(nbapps)]
     
     #Initialise variables to store data
-    '''4D array structure: [apertures, objects, bkg_params, frames]'''
+    struct_4D_flux = ['apertures', 'objects', 'bkgrnd params', 'frames']
+    header_4D_flux = append_header(hdr, struct_4D_flux)
     flux_store = np.empty([radii.shape[0], len(x_ref),
         len(bsizes)*len(fsizes), len(f_list)])
     fluxerr_store = np.empty([radii.shape[0], len(x_ref),
@@ -192,20 +217,24 @@ def run_phot(dir_, p, name):
     bkg_app_fluxerr_store = np.empty([radii.shape[0], len(x_ref),
         len(bsizes)*len(fsizes), len(f_list)])
     
-    '''3D array structure: [bkg_apertures, bkg_params, frames]'''
+    struct_3D_flux = ['bkgrnd apertures', 'bkgrnd params', 'frames']
+    header_3D_flux = append_header(hdr, struct_3D_flux)
     bkg_flux_store = np.empty([len(bapp_x), len(bsizes)*len(fsizes),
         len(f_list)])
     
-    '''2D array structure: [objects, frames]'''
+    struct_2D_pos = ['objects', 'frames']
+    header_2D_pos = append_header(hdr, struct_2D_pos)
     pos_store_x = np.empty([len(x_ref), len(f_list)])
     pos_store_y = np.empty([len(y_ref), len(f_list)])
     pos_store_donuts_x = np.empty([len(x_ref), len(f_list)])
     pos_store_donuts_y = np.empty([len(y_ref), len(f_list)])
     
-    '''2D array structure: [bkg_params, frames]'''
+    struct_2D_fwhm = ['bkgrnd params', 'frames']
+    header_2D_fwhm = append_header(hdr, struct_2D_fwhm)
     fwhm_store = np.empty([len(bsizes)*len(fsizes), len(f_list)])
     
-    '''1D array structure: [frames]'''
+    struct_1D_frames = ['frames']
+    header_1D_frames = append_header(hdr, struct_1D_frames)
     jd_store = np.empty([len(f_list)])
     hjd_store = np.empty([len(f_list)])
     bjd_store = np.empty([len(f_list)])
@@ -213,6 +242,17 @@ def run_phot(dir_, p, name):
     frame_shift_y_store = np.empty([len(f_list)])
     exp_store = np.empty([len(f_list)])
     airmass_store = np.empty([len(f_list)])
+
+    #Create variable to log bkg param combinations iterating through 
+    dt = np.dtype([('bkg_parameter_combo', 'S10')])
+    bkg_params = np.empty(bsizes.shape[0]*fsizes.shape[0], dtype=dt)
+    struct_bkg_params = ['box size (pix), filter width (box)']
+    header_bkg_params = append_header(hdr, struct_bkg_params)
+    counter = 0
+    for i in bsizes:
+        for j in fsizes:
+            bkg_params[counter] = str(i)+','+str(j)
+            counter += 1
 
     #Create Donuts object using first image as reference
     d = Donuts(
@@ -373,33 +413,29 @@ def run_phot(dir_, p, name):
         sys.stdout.write("\r[{0}{1}] {2:5.1f}% - {3:02}h:{4:02}m:{05:.2f}s".
              format('#' * nn, ' ' * (meter_width - nn), 100*float(count)/n_steps,h,m,s))
   
-    #Get output file general header
-    hdr = makeheader(firsthdr, hDATEOBS, hOBSERVER, hTELESCOP,
-        hINSTRUMT, hFILTERA, hFILTERB, hOBJECT, hRA, hDEC, hEPOCH, hEQUINOX,
-        platescale)
-
     #Save each data array as a HDU in FITS file
-    with fitsio.FITS(output_name, "rw") as g:
-        g.write(flux_store, header=hdr, extname="OBJ_FLUX")
-        g.write(fluxerr_store, header=hdr, extname="OBJ_FLUX_ERR")
-        g.write(flag_store, header=hdr, extname="OBJ_FLUX_FLAGS")
-        g.write(bkg_app_flux_store, header=hdr, extname="OBJ_BKG_APP_FLUX")
-        g.write(bkg_app_fluxerr_store, header=hdr,
+    with fitsio.FITS(output_name, "rw", clobber=True) as g:
+        g.write(flux_store, header=header_4D_flux, extname="OBJ_FLUX")
+        g.write(fluxerr_store, header=header_4D_flux, extname="OBJ_FLUX_ERR")
+        g.write(flag_store, header=header_4D_flux, extname="OBJ_FLUX_FLAGS")
+        g.write(bkg_app_flux_store, header=header_4D_flux, extname="OBJ_BKG_APP_FLUX")
+        g.write(bkg_app_fluxerr_store, header=header_4D_flux,
                 extname="OBJ_BKG_APP_FLUX_ERR")
-        g.write(bkg_flux_store, header=hdr, extname="RESIDUAL_BKG_FLUX")
-        g.write(pos_store_x, header=hdr, extname="OBJ_CCD_X")
-        g.write(pos_store_y, header=hdr, extname="OBJ_CCD_Y")
-        g.write(pos_store_donuts_x, header=hdr, extname="OBJ_CCD_X_UNREFINED")
-        g.write(pos_store_donuts_y, header=hdr, extname="OBJ_CCD_Y_UNREFINED")
-        g.write(fwhm_store, header=hdr, extname="MEAN_OBJ_FWHM")
-        g.write(jd_store, header=hdr, extname="JD")
-        g.write(hjd_store, header=hdr, extname="HJD")
-        g.write(bjd_store, header=hdr, extname="BJD")
-        g.write(frame_shift_x_store, header=hdr, extname="FRAME_SHIFT_X")
-        g.write(frame_shift_y_store, header=hdr, extname="FRAME_SHIFT_Y")
-        g.write(frame_shift_y_store, header=hdr, extname="FRAME_SHIFT_Y")
-        g.write(exp_store, header=hdr, extname="EXPOSURE_TIME")
-        g.write(airmass_store, header=hdr, extname="AIRMASS")
-
+        g.write(bkg_flux_store, header=header_3D_flux, extname="RESIDUAL_BKG_FLUX")
+        g.write(pos_store_x, header=header_2D_pos, extname="OBJ_CCD_X")
+        g.write(pos_store_y, header=header_2D_pos, extname="OBJ_CCD_Y")
+        g.write(pos_store_donuts_x, header=header_2D_pos, extname="OBJ_CCD_X_UNREFINED")
+        g.write(pos_store_donuts_y, header=header_2D_pos, extname="OBJ_CCD_Y_UNREFINED")
+        g.write(fwhm_store, header=header_2D_fwhm, extname="MEAN_OBJ_FWHM")
+        g.write(jd_store, header=header_1D_frames, extname="JD")
+        g.write(hjd_store, header=header_1D_frames, extname="HJD")
+        g.write(bjd_store, header=header_1D_frames, extname="BJD")
+        g.write(frame_shift_x_store, header=header_1D_frames, extname="FRAME_SHIFT_X")
+        g.write(frame_shift_y_store, header=header_1D_frames, extname="FRAME_SHIFT_Y")
+        g.write(exp_store, header=header_1D_frames, extname="EXPOSURE_TIME")
+        g.write(airmass_store, header=header_1D_frames, extname="AIRMASS")
+        #Variables
+        g.write(radii, header=hdr, extname="VARIABLES_APERTURE_RADII")
+        g.write(bkg_params, header=header_bkg_params, extname="VARIABLES_BKG_PARAMS")
 
     print "\nCompleted photometry for %s." % name

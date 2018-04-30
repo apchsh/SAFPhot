@@ -64,14 +64,14 @@ if __name__ == '__main__':
     if args.mode in ('both', 'photometry'):
  
         #run photometry
-        dir_ = join(args.dir_in, 'reduction/')
+        dir_ = join(args.dir_in, p.red_dir)
         
         for root, dirs, files in walk(dir_):
         
             for item in dirs:
 
                 print "Processing frames for photometry on %s" % item 
-                ph.run_phot(dir_, p, item)
+                ph.run_phot(args.dir_in, p, item)
 
     if args.mode not in ('both', 'reduction', 'photometry'):
 
