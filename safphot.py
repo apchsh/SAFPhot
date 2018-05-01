@@ -11,15 +11,10 @@ scripts are as follows:
 Mandatory:
     - Input directory: folder containing the calibration and science frames
     - Mode: mode the pipeline should run in
-    - Camera used: this is used to select input fits files in directory
 
 Optional:
-    - Output directory photometry: if no directory is specified the standard scheme is used
-    - Output directory calibration: if only directory photometry is specified use that 
-    - Telescope used: 
-    - Camera used: 
-    - RA: explicit RA of the object to superseed the header value
-    - DEC: explicit DEC of the object to superseed the header value 
+    - Pattern: prefix pattern for input FITS files, used to select certain
+      files
 
 '''
 
@@ -38,13 +33,19 @@ if __name__ == '__main__':
     #Parse arguments from command line
     parser = argparse.ArgumentParser(
         description='Reduction and photometry pipeline for SHOC data')
-    parser.add_argument('camera', metavar='camera', help='Specify the SHOC camera used',
-            type=str, action='store')
     parser.add_argument('dir_in', metavar='dir_in', help='Input directory',
             type=str, action='store')
     parser.add_argument('mode', metavar='mode', 
             help='Mode: [reduction, photometry, both]', type=str, action='store')   
+    parser.add_argument('--p', help='prefix search pattern for input FITS file name',
+            type=str, dest='pattern')
     args = parser.parse_args()
+    
+    #Check for optional arguments
+    if args.pattern is not None:
+        pattern = args.pattern
+    else:
+        pattern = ""
 
     #Load the list of parameters 
     p = params.get_params()
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     if args.mode in ('both', 'reduction'):
 
         #Run the file detection and sorting code
-        files = ps.fits_sort(args.dir_in, args.camera, verbose=True)
+        files = ps.fits_sort(args.dir_in, args.pattern, verbose=True)
         files.summary_ra_dec()
 
         #Create the calibration master files (returns dict of frames)
@@ -71,7 +72,7 @@ if __name__ == '__main__':
             for item in dirs:
 
                 print "Processing frames for photometry on %s" % item 
-                ph.run_phot(args.dir_in, p, item)
+                ph.run_phot(args.dir_in, pattern, p, item)
 
     if args.mode not in ('both', 'reduction', 'photometry'):
 

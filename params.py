@@ -32,13 +32,13 @@ def get_params():
     params["EXPOSURE"] = "EXP" # Exposure time
 
     #optional
-    params["RA"] = "RA"
-    params["DEC"] = "DEC"
-    params["EPOCH"] = "EPOCH"
-    params["EQUINOX"] = "EQUINOX" 
+    params["RA"] = "RA" # RA of target object
+    params["DEC"] = "DEC" # DEC of target object
+    params["EPOCH"] = "EPOCH" # EPOCH of target coordinates
+    params["EQUINOX"] = "EQUINOX" # Equinox of target coordinates
     params["VBIN"] = "VBIN" # CCD vertical bin factor
     params["HBIN"] = "HBIN" # CCD horizontal bin factor
-    params["AIRMASS"] = "AIRMASS"
+    params["AIRMASS"] = "AIRMASS" # Airmass during observation
     params["JD"] = "JD"
     params["HJD"] = "HJD"
     params["BJD"] = "BJD"

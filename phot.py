@@ -7,8 +7,8 @@ import fitsio
 import sep
 import numpy as np
 import matplotlib.pyplot as plt 
-import unpack # SAFPhot script
 from astropy.table import Table
+from astropy import coordinates as coord
 from os.path import join, exists
 from os import makedirs
 from glob import glob
@@ -17,6 +17,8 @@ from donuts import Donuts
 from time import time as time_
 from scipy import ndimage
 from copy import copy
+from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
+from photsort import get_all_files
 
 def makeheader(h, dateobs, observer, telescop, instrumt, filtera,
         filterb, obj, ra, dec, epoch, equinox, platescale):
@@ -119,7 +121,7 @@ def build_obj_cat(dir_, name, first, thresh, bw, fw, angle):
     
     return x_ref, y_ref
 
-def run_phot(dir_, p, name):
+def run_phot(dir_, pattern, p, name):
 
     '''THE FOLLOWING DEFINITIONS NEED TO BE READ IN FROM FILE EVENTUALLY'''
     #Define background box sizes to use
@@ -181,7 +183,8 @@ def run_phot(dir_, p, name):
 
     #Get science images
     file_dir_ = join(dir_, p.red_dir, name, "")
-    f_list = sorted(glob(file_dir_ + "*.fits")) 
+    f_list = get_all_files(file_dir_, extension=pattern+"*.fits")
+    assert (len(f_list) > 0), "No photometry files found!"
     print ("%d frames" %len(f_list))
 
     #Load first image
@@ -295,11 +298,21 @@ def run_phot(dir_, p, name):
             try:
                 hjd = header[hHJD]
             except:
-                hjd = np.nan
+                if all(v is not None for v in [hOBSLONG, hOBSLAT, hOBSALT]):
+                    hjd = convert_jd_hjd(
+                            jd, ra, dec, coord.EarthLocation.from_geodetic(
+                                hOBSLONG, hOBSLAT, hOBSALT)) 
+                else:
+                    hjd = np.nan
             try:
                 bjd = header[hBJD]
             except:
-                bjd = np.nan
+                if all(v is not None for v in [hOBSLONG, hOBSLAT, hOBSALT]):
+                    bjd = convert_jd_bjd(
+                            jd, ra, dec, coord.EarthLocation.from_geodetic(
+                                hOBSLONG, hOBSLAT, hOBSALT)) 
+                else:
+                    bjd = np.nan
             exp = header[hEXP]
             gain = header[hGAIN]
             binfactor = header[hBINFAC]
