@@ -5,6 +5,9 @@ from fnmatch import fnmatch
 from os import path, walk
 from glob import glob
 
+class InputDirError(Exception):
+    pass
+
 def get_all_files(folder, extension=".fits"):
 
     filestore = []
@@ -18,48 +21,49 @@ def get_all_files(folder, extension=".fits"):
 
 class fits_sort():
 
-    # directory
-    dir_ = ""
-    cam = ""
-    verbose = False
-
     # results
+    dir_ = ""
     bias = []
     flat = []; flat_filter = [];
     target = []; target_filter = []; target_name = []; 
     target_ra = []; target_dec = []
 
-    def __init__(self, search_dir, camera, verbose=False):
+    def __init__(self, params, search_dir, camera, verbose=False):
 
-        # add check in here to check the directory is real and camera is valid
-        self.dir_ = search_dir
-        self.cam = camera
-        self.verbose = verbose
 
-        # run the main function of the object, search and classify files
-        self.search()
+        if path.isdir(search_dir):
 
-        # print a summary
-        self.summary()
+            # run the main function of the object, search and classify files
+            self.search(params, search_dir, camera, verbose)
 
-    def search(self):
+            self.dir_ = search_dir
 
-        if self.verbose: print "Searching directory %s" % self.dir_
+        else:
+
+            raise InputDirException("%s does not exist." % search_dir)
+
+    def search(self, params, search_dir, camera, verbose):
+
+        if verbose: print "Searching directory %s" % search_dir
 
         # Find all files
-        token = self.cam +  "_*.fits" 
-        files =  get_all_files(self.dir_, extension=token)
+        token = camera +  "_*.fits" 
+        files =  get_all_files(search_dir, extension=token)
 
-        if self.verbose: print "%i files found." % len(files)
-
+        if verbose: print "%i files found." % len(files)
+ 
         for file_ in files:
-        
+
+            # CHECK FILE EXISTS AND IS VALID
+
             # OPEN FILES
             f = fits.open(file_)  
-            fobstype = f[0].header['OBSTYPE']
-            fobject = f[0].header['OBJECT']
-            filtera = f[0].header['FILTERA']
-            filterb = f[0].header['FILTERB']
+            fobstype = f[0].header[params.obstype]
+            fobject = f[0].header[params.target]
+            if not(params.filtera == ''):
+                filtera = f[0].header[params.filtera]
+            if not(params.filterb == ''):
+                filterb = f[0].header[params.filterb]
         
             # CLEAN FILTERS
             filtera = filtera.strip().strip('\n')
@@ -70,40 +74,22 @@ class fits_sort():
             if filter_ == '': filter_ = 'WHITE'
 
             # SPLIT FILES INTO OBJECTS
-            if "BIAS" in fobstype.upper() or "BIAS" in fobject.upper():
+            if params.biasid in fobstype.upper() or params.biasid in fobject.upper():
                 self.bias.append(file_) 
-            elif "FLAT" in fobstype.upper() or "FLAT" in fobject.upper():
+            elif params.flatid in fobstype.upper() or params.flatid in fobject.upper():
                 self.flat.append(file_)
                 self.flat_filter.append(filter_) 
             else:
                 self.target.append(file_)
                 self.target_filter.append(filter_)
                 self.target_name.append((fobject + " (%s)") % filter_)
-                self.target_ra.append(f[0].header['OBJRA'])
-                self.target_dec.append(f[0].header['OBJDEC'])
+                self.target_ra.append(f[0].header[params.ra])
+                self.target_dec.append(f[0].header[params.dec])
 
             #CLOSE THE FILE
             f.close()
 
-        if self.verbose: print "Files sorted." 
-
-    def summary(self):
-
-        #Information about bias files
-        print "Found %i bias files." % len(self.bias)
-        
-        #Information about flat files
-        print "Found %i flat files:" % len(self.flat)
-        temp = np.array(self.flat_filter, dtype=str)
-        for filter_ in set(self.flat_filter):
-            print "\t %i files in %s band." % (sum(temp==filter_), filter_)
-        
-        #Information about targets
-        print "Found %i target files:" % len(self.target_name)
-        temp_targs = np.array(self.target_name, dtype=str)
-        for object_ in set(self.target_name): 
-            print "\t %i files for target %s." % (sum(temp_targs==object_),
-                    object_)
+        if verbose: print "Files sorted." 
 
     def summary_ra_dec(self):
 

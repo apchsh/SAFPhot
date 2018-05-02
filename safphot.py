@@ -53,7 +53,7 @@ if __name__ == '__main__':
     if args.mode in ('both', 'reduction'):
 
         #Run the file detection and sorting code
-        files = ps.fits_sort(args.dir_in, args.pattern, verbose=True)
+        files = ps.fits_sort(p, args.dir_in, args.pattern, verbose=True)
         files.summary_ra_dec()
 
         #Create the calibration master files (returns dict of frames)

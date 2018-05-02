@@ -6,24 +6,6 @@ from astropy.io import fits
 from copy import copy
 from glob import glob
 
-def difheader(head1, head2): 
-    '''Function for checking the difference between two headers. Not used for
-    correction. Just for comparison'''
-
-    #get a list of keys 
-    key1 = []
-    for key in head1: key1.append(key)
-    key2 = [] 
-    for key in head2: key2.append(key) 
-
-    #make a copy of key1 to iterate through
-    temp = copy(key1)
-    for key in temp:
-        if (key in key1) and (key in key2):
-            key1.remove(key); key2.remove(key)
-
-    return key1, key2 
-
 def correct_time(header, frame_num):
     '''Function to fix the UTC time for each frame.'''
 

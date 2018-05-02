@@ -30,10 +30,13 @@ def get_params():
     params["FILTERB"] = "FILTERB" # Filter, second wheel
     params["TARGET"] = "OBJECT" # Target/object name
     params["EXPOSURE"] = "EXP" # Exposure time
-
+    params["OBSTYPE"] = "OBSTYPE" #keyword for observation time
+    params["BIASID"] = "BIAS" #keyword to id BIAS frames 
+    params["FLATID"] = "FLAT" #keyword to id FLAT frames
+ 
     #optional
-    params["RA"] = "RA" # RA of target object
-    params["DEC"] = "DEC" # DEC of target object
+    params["RA"] = "OBJRA" # RA of target object
+    params["DEC"] = "OBJDEC" # DEC of target object
     params["EPOCH"] = "EPOCH" # EPOCH of target coordinates
     params["EQUINOX"] = "EQUINOX" # Equinox of target coordinates
     params["VBIN"] = "VBIN" # CCD vertical bin factor

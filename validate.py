@@ -105,7 +105,10 @@ class Validator():
                "RED_DIR":check_string,
                "PHOT_DIR":check_string,
                "PHOT_PREFIX":check_string,
-               "RED_PREFIX":check_string}
+               "RED_PREFIX":check_string,
+               "BIASID":check_string,
+               "FLATID":check_string,
+               "OBSTYPE":check_string}
 
     def __init__(self, pardict): 
 
