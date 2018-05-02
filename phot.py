@@ -55,8 +55,7 @@ def append_header(h, vars_):
     #Add keyword for each dimension
     for i in range(len(vars_)):
         h_.append({'name':'VARAXIS' + str(i+1), 'value':vars_[i],
-                'comment':'variable of data axis %s'
-                %(i+1)})
+                'comment':'variable of data axis %s' %(i+1)})
     return h_
 
 def rot(image, xy, angle):

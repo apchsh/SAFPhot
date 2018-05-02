@@ -6,14 +6,15 @@ from astropy.io import fits
 from copy import copy
 from glob import glob
 
-def correct_time(header, frame_num):
+def correct_time(header, frame_num, deadtime=0.00676):
     '''Function to fix the UTC time for each frame.'''
 
     #Load time from header
     t = Time([header['GPSSTART']], format='isot', scale='utc')
-    #Create the time delta object which corrects the exposure time
-    dt = TimeDelta(val=frame_num*(header['EXPOSURE']+ 0.00676) +
-    header['EXPOSURE'] * 0.5, format='sec')
+    
+    #Calculate centre of exposure time for a given frame in data cube
+    dt = TimeDelta(val=frame_num*(header['EXPOSURE']+ deadtime) +
+        (header['EXPOSURE'] + deadtime) * 0.5, format='sec')
     return t + dt
 
 def convert_jd_hjd(jd, ra, dec, loc):
@@ -58,7 +59,7 @@ def convert_jd_bjd(jd, ra, dec, loc):
     bjd = times.tdb + ltt_bary
     return bjd.jd
 
-def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
+def unpack_reduce(files, calframes, verbose=True):
 
     #prepare for unpacking process
     master_outdir = join(files.dir_ , 'reduction') 
@@ -85,6 +86,7 @@ def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
         #Open master files
         f = fits.open(file_) 
         prihdr = copy(f[0].header) 
+        
         #If GPSSTART time is missing, calculate it
         if (prihdr['GPSSTART'] == '', prihdr['GPSSTART'] == 'NA'):
             frame_time = Time([prihdr['FRAME']], format='isot', scale='utc')
@@ -99,11 +101,6 @@ def unpack_reduce(files, calframes, verbose=True, ra=None, dec=None):
 
             newtime = correct_time(temp_header, count)        
             temp_header['JD'] = newtime.jd[0]
-
-            if (ra is not None) and (dec is not None):
-                #Overwrite header RA and DEC with runtime input params
-                temp_header['OBJRA'] = ra
-                temp_header['OBJDEC'] = dec
             temp_header['HJD'] = convert_jd_hjd(newtime.jd[0],
                                 temp_header['OBJRA'], temp_header['OBJDEC'], loc)
             temp_header['BJD'] = convert_jd_bjd(newtime.jd[0],

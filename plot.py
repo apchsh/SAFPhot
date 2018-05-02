@@ -257,10 +257,12 @@ class Logger(object):
 if __name__ == "__main__":
 
     #===== START OF INPUT PARAMETERS ======
+    
+    #Specify input-output directory and input photometry file name
+    dir_ = ''
+    infile_ = '*_phot.fits'
 
-    #Specify input-output data directory and target names
-    dir_ = 'reduction'
-    name = 'NG2058-0248.003718'
+    name = ''
 
     #Define target and comparison object numbers (indicies) from object number plot
     o_num = 2                  # As integer
