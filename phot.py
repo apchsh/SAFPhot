@@ -20,33 +20,33 @@ from copy import copy
 from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
 from photsort import get_all_files
 
-def makeheader(h, dateobs, observer, analyser, observat, telescop, instrumt, filtera,
-        filterb, obj, ra, dec, epoch, equinox, platescale):
+def makeheader(m):
     #Make general header for each HDU
-    hlist = [{'name':'DATE-OBS', 'value':h[dateobs],
-                    'comment':h.get_comment(dateobs)},
-            {'name':'OBSERVER', 'value':h[observer],
-                    'comment':h.get_comment(observer)},
-            {'name':'ANALYSER', 'value':h[analyser],
-                    'comment':h.get_comment(analyser)},
-            {'name':'OBSERVAT', 'value':'SAAO',
+    hlist = [{'name':'DATE-OBS', 'value':m.dateobs,
+                    'comment':m.dateobs_com},
+            {'name':'OBSERVER', 'value':m.observer,
+                    'comment':m.observer_com},
+            {'name':'ANALYSER', 'value':m.analyser,
+                    'comment':m.analyser_com},
+            {'name':'OBSERVAT', 'value':m.observatory,
                     'comment':'Observatory'},
-            {'name':'TELESCOP', 'value':h[telescop],
-                    'comment':h.get_comment(telescop)},
-            {'name':'INSTRUMT', 'value':h[instrumt],
-                    'comment':h.get_comment(instrumt)},
-            {'name':'FILTERA', 'value':h[filtera],
-                    'comment':h.get_comment(filtera)},
-            {'name':'FILTERB', 'value':h[filterb],
-                    'comment':h.get_comment(filterb)},
-            {'name':'PLATESCL', 'value':platescale, 'comment':'arcsec/pixel'},
-            {'name':'OBJECT', 'value':h[obj], 'comment':h.get_comment(obj)},
-            {'name':'RA', 'value':h[ra], 'comment':h.get_comment(ra)},
-            {'name':'DEC', 'value':h[dec], 'comment':h.get_comment(dec)},
-            {'name':'EPOCH', 'value':h[epoch],
-                    'comment':h.get_comment(epoch)},
-            {'name':'EQUINOX', 'value':h[equinox],
-                    'comment':h.get_comment(equinox)}
+            {'name':'TELESCOP', 'value':m.telescop,
+                    'comment':m.telescop_com},
+            {'name':'INSTRUMT', 'value':m.instrumt,
+                    'comment':m.instrumt_com},
+            {'name':'FILTERA', 'value':m.filtera,
+                    'comment':m.filtera_com},
+            {'name':'FILTERB', 'value':m.filterb,
+                    'comment':m.filterb_com},
+            {'name':'PLATESCL', 'value':m.platescale,
+                    'comment':'platescale [arcsec/pixel]'},
+            {'name':'OBJECT', 'value':m.obj, 'comment':m.obj_com},
+            {'name':'RA', 'value':m.ra, 'comment':m.ra_com},
+            {'name':'DEC', 'value':m.dec, 'comment':m.dec_com},
+            {'name':'EPOCH', 'value':m.epoch,
+                    'comment':m.epoch_com},
+            {'name':'EQUINOX', 'value':m.equinox,
+                    'comment':m.equinox_com}
             ]
     return hlist
 
@@ -122,6 +122,20 @@ def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle):
     
     return x_ref, y_ref
 
+class Mapper():
+    def __init__(self, hdr, p, keylist):
+        for key in keylist:
+            try:
+                setattr(self, key, hdr[key.upper()])
+            except:
+                setattr(self, key, p.key)
+            try:
+                setattr(self, key+'_com', hdr.get_comment( key.upper() ))
+            except:
+                pass
+                
+        return self
+
 def run_phot(dir_, pattern, p, name):
 
     #Define background box sizes to use
@@ -165,10 +179,14 @@ def run_phot(dir_, pattern, p, name):
         first = fi[0][:, :]
         firsthdr = fi[0].read_header()
 
+    #Try and map parameters to header keywords otherwise set the keyword
+    keylist = [date-obs, observer, analyser, observatory, telescope,
+            instrument, filtera, filterb, target, ra, dec, epoch, equinox,
+            platescale, lon, lat, alt, hbin, vbin, airmass, preamp]
+    m = Mapper(firsthdr, p, keylist)
+    
     #Get output file general header
-    hdr = makeheader(firsthdr, p.date-obs, p.observer, p.analyser,
-            p.observatory, p.telescope, p.instrument, p.filtera, p.filterb,
-            p.target, p.ra, p.dec, p.epoch, p.equinox, p.platescale)
+    hdr = makeheader(m)
 
     #Get object catalogue x and y positions
     x_ref, y_ref = build_obj_cat(out_dir, p.phot_prefix, name, first, 
@@ -265,75 +283,39 @@ def run_phot(dir_, pattern, p, name):
             data = f[0][:, :]
             header = f[0].read_header()
 
-            #Load most important header data from image, used for cals
+            #Set frame dependent variables
+            exp = header[p.exposure] # existence compulsory
+            jd = header[p.jd] # existence compulsory
             try:
-                ra = header[p.ra]
+                binfactor = m.hbin
             except:
-                ra = p.ra
-            try:
-                dec = header[p.dec]
-            except:
-                dec = p.dec
-            try:
-                lon = header[p.lon]
-            except:
-                lon = p.lon
-            try:
-                lat = header[p.lat]
-            except:
-                lat = p.lat
-            try:
-                alt = header[p.alt]
-            except:
-                alt = p.alt
-            exp = header[p.exposure] # exception not an option
-            jd = header[p.jd] # exception not an option
+                binfactor = m.vbin
 
-            #Store variables
+            #Store frame dependent variables
             exp_store[count-1] = exp
             jd_store[count-1] = jd
             try:
                 hjd_store[count-1] = header[p.hjd]
             except:
-                if all(v is not None for v in [p.lon, p.lat, p.alt]):
+                if all(v is not None for v in [m.lon, m.lat, m.alt]):
                     hjd_store[count-1] = convert_jd_hjd(
-                            jd, ra, dec, coord.EarthLocation.from_geodetic(
-                                p.lon, p.lat, p.alt)) 
+                            jd, m.ra, m.dec, coord.EarthLocation.from_geodetic(
+                                m.lon, m.lat, m.alt)) 
                 else:
                     hjd_store[count-1] = np.nan
             try:
                 bjd_store[count-1] = header[p.bjd]
             except:
-                if all(v is not None for v in [p.lon, p.lat, p.alt]):
+                if all(v is not None for v in [m.lon, m.lat, m.alt]):
                     bjd_store[count-1] = convert_jd_bjd(
-                            jd, ra, dec, coord.EarthLocation.from_geodetic(
-                                p.lon, p.lat, p.alt)) 
+                            jd, m.ra, m.dec, coord.EarthLocation.from_geodetic(
+                                m.lon, m.lat, m.alt)) 
                 else:
                     bjd_store[count-1] = np.nan
             try:
-                gain = header[p.preamp]
-            except:
-                gain = p.preamp
-            try:
-                platescale = header[p.platescale]
-            except:
-                platescale = p.platescale
-            try:
-                hbinfactor = header[p.hbin]
-            except:
-                hbinfactor = p.hbin
-            try:
-                vbinfactor = header[p.vbin]
-            except:
-                vbinfactor = p.vbin
-            if hbinfactor == vbinfactor:
-                binfactor = hbinfactor
-            else:
-                binfactor = max(hbinfactor, vbinfactor)
-            try:
                 airmass_store[count-1] = header[p.airmass]
             except:
-                airmass_store[count-1] = p.airmass
+                airmass_store[count-1] = np.nan
 
         #Initialise count of number of bkg params gone through
         bkg_count = 0
@@ -356,7 +338,8 @@ def run_phot(dir_, pattern, p, name):
                 
                 #Measure background flux residuals
                 bflux, bfluxerr, bflag = sep.sum_circle(data_sub, bapp_x, bapp_y,
-                            bkg_rad, err=bkg.globalrms, mask=segmap_bkg, gain=gain)
+                            bkg_rad, err=bkg.globalrms, mask=segmap_bkg,
+                            gain=m.preamp)
                 
                 #Store background flux residuals
                 bkg_flux_store[:, bkg_count, count-1] = bflux/exp
@@ -372,7 +355,7 @@ def run_phot(dir_, pattern, p, name):
 
                 #Store the fwhm result in arcsec, taking mean over all objects
                 fwhm_store[bkg_count, count-1] = (
-                        np.nanmean(fwhm) * binfactor * platescale)
+                        np.nanmean(fwhm) * binfactor * m.platescale)
                 
                 #Update target aperture positions using winpos algorithm
                 x_pos,y_pos,f = sep.winpos(data_sub, x, y,
@@ -404,11 +387,12 @@ def run_phot(dir_, pattern, p, name):
                 
                 #Measure number of counts in target aperture
                 flux, fluxerr, flag = sep.sum_circle(data_sub, x_rad, y_rad,
-                    rad, err=bkg.globalrms, gain=gain)
+                    rad, err=bkg.globalrms, gain=m.preamp)
                 
                 #Measure num counts subtracted as bkg in same aperture
                 bflux_app, bfluxerr_app, bflag_app = sep.sum_circle(
-                        bkg.back(), x_rad, y_rad, rad, err=bkg.globalrms, gain=gain)
+                        bkg.back(), x_rad, y_rad, rad, err=bkg.globalrms,
+                        gain=m.preamp)
 
                 #Store flux, flux err and flags for target apertures
                 flux_store[:, :, bkg_count, count-1] = flux/exp
