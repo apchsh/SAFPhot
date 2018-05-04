@@ -6,16 +6,16 @@ def get_params():
     params = {}
 
     #OBSERVING KEYWORDS
-    params["PLATESCALE"] = 0.167 # [arcsec/pix]
+    params["PLATESCALE"] = 0.167 # platescale [arcsec/pix]
     params["FIELD_ANGLE"] = 180.0 # rotate the example field image by [deg]
     
     #PHOTOMETRY KEYWORDS 
-    params["RADII"] = [3.0, 3.1]
-    params["BOX_SIZE"] = [16, 32]
-    params["FILTER_SIZE"] = [3.0] 
-    params["SOURCE_THRESH"] = 7.0
-    params["BKG_APP_RAD"] = 4.0
-    params["NUM_BKG_APPS"] = 100
+    params["RADII"] = [3.0, 3.1] # Aperture radii to use
+    params["BOX_SIZE"] = [16, 32] # Background estimation box size
+    params["FILTER_SIZE"] = [3.0] # Background estimation filter length (boxes)
+    params["SOURCE_THRESH"] = 7.0 # Source detection threshold
+    params["BKG_APP_RAD"] = 4.0 # Aperture radius to measure background residuals
+    params["NUM_BKG_APPS"] = 100 # Num apertures per frame to measure bkg residuals
 
     #HEADER KEYWORDS 
     '''Here you can either pass in the keyword name contained within the image
@@ -43,9 +43,9 @@ def get_params():
     params["HBIN"] = "HBIN" # CCD horizontal bin factor
     params["PREAMP"] = "PREAMP" # Preamplifier gain e-/ADU
     params["AIRMASS"] = "AIRMASS" # Airmass during observation
-    params["JD"] = "JD"
-    params["HJD"] = "HJD"
-    params["BJD"] = "BJD"
+    params["JD"] = "JD" # Julian Date
+    params["HJD"] = "HJD" # Heliocentric Julian Date
+    params["BJD"] = "BJD" # Barycentric Julian Date
     params["LAT"] = 0.334 # latitude of telescope in Earth geodetic co-ords
     params["LON"] = 0.334 # longitude of telescope in Earth geodetic co-ords
     params["ALT"] = 300.0 # Altitude of telescope in meters
