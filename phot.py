@@ -20,13 +20,15 @@ from copy import copy
 from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
 from photsort import get_all_files
 
-def makeheader(h, dateobs, observer, telescop, instrumt, filtera,
+def makeheader(h, dateobs, observer, analyser, observat, telescop, instrumt, filtera,
         filterb, obj, ra, dec, epoch, equinox, platescale):
     #Make general header for each HDU
     hlist = [{'name':'DATE-OBS', 'value':h[dateobs],
                     'comment':h.get_comment(dateobs)},
             {'name':'OBSERVER', 'value':h[observer],
                     'comment':h.get_comment(observer)},
+            {'name':'ANALYSER', 'value':h[analyser],
+                    'comment':h.get_comment(analyser)},
             {'name':'OBSERVAT', 'value':'SAAO',
                     'comment':'Observatory'},
             {'name':'TELESCOP', 'value':h[telescop],
@@ -90,7 +92,7 @@ def star_loc_plot(name, data, x, y, angle):
     plt.savefig(name, bbox_inches="tight")
     plt.close('all')
 
-def build_obj_cat(dir_, name, first, thresh, bw, fw, angle):
+def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle):
     
     #Get background image  
     bkg = sep.Background(first, bw=bw, bh=bw, fw=fw, fh=fw)
@@ -115,14 +117,13 @@ def build_obj_cat(dir_, name, first, thresh, bw, fw, angle):
     '''
     
     #Save example field image with objects numbered
-    star_loc_plot(join(dir_, "SAAO_"+ name +'_field.png'),
+    star_loc_plot(join(dir_, prefix + name +'_field.png'),
             first_sub, x_ref, y_ref, angle)
     
     return x_ref, y_ref
 
 def run_phot(dir_, pattern, p, name):
 
-    '''THE FOLLOWING DEFINITIONS NEED TO BE READ IN FROM FILE EVENTUALLY'''
     #Define background box sizes to use
     bsizes = np.array(p.box_size)
 
@@ -133,41 +134,14 @@ def run_phot(dir_, pattern, p, name):
     radii = np.array(p.radii)
 
     #Define num apertures and radius to use for bkg residuals
-    bkg_rad = 4.0
-    nbapps = 100
+    bkg_rad = p.bkg_app_rad
+    nbapps = p.num_bkg.apps
 
-    #Define platescale for seeing calculation
-    platescale = p.platescale #arcsec / pix
-    
     #Define source detection threshold
     thresh = p.source_thresh
    
     #Define rotation angle for field image
     field_angle = p.field_angle
-
-    #Define header keywords
-    hOBJECT = "OBJECT"
-    hRA = "OBJRA"
-    hDEC = "OBJDEC"
-    hEPOCH = "OBJEPOCH"
-    hEQUINOX = "OBJEQUIN"
-    hGAIN = "PREAMP"
-    hEXP = "EXPOSURE"
-    hBINFAC = "VBIN"
-    hAIRMASS = "AIRMASS"
-    hJD = "JD"
-    hHJD = "HJD"
-    hBJD = "BJD"
-    hOBSLAT = "LAT" # Needed for non-SAAO telescopes
-    hOBSLONG = "LON" # Needed for non-SAAO telescopes
-    hOBSALT = "ALT" # Needed for non-SAAO telescopes
-    hOBSERVER = "OBSERVER"
-    hOBSERVAT = "OBSERVAT" # Needed for non-SAAO telescopes
-    hTELESCOP = "TELESCOP"
-    hINSTRUMT = "INSTRUME"
-    hFILTERA = "FILTERA"
-    hFILTERB = "FILTERB"
-    hDATEOBS = "GPSSTART"
 
     #Define output directory and file name 
     if p.out_dir is "":
@@ -192,12 +166,13 @@ def run_phot(dir_, pattern, p, name):
         firsthdr = fi[0].read_header()
 
     #Get output file general header
-    hdr = makeheader(firsthdr, hDATEOBS, hOBSERVER, hTELESCOP,
-        hINSTRUMT, hFILTERA, hFILTERB, hOBJECT, hRA, hDEC, hEPOCH, hEQUINOX,
-        platescale)
+    hdr = makeheader(firsthdr, p.date-obs, p.observer, p.analyser,
+            p.observatory, p.telescope, p.instrument, p.filtera, p.filterb,
+            p.target, p.ra, p.dec, p.epoch, p.equinox, p.platescale)
 
     #Get object catalogue x and y positions
-    x_ref, y_ref = build_obj_cat(dir_, name, first, thresh, 32, 3, field_angle)
+    x_ref, y_ref = build_obj_cat(out_dir, p.phot_prefix, name, first, 
+            thresh, 32, 3, field_angle)
 
     #Define aperture positions for background flux measurement
     lim_x = first.shape[0]
@@ -244,6 +219,14 @@ def run_phot(dir_, pattern, p, name):
     frame_shift_y_store = np.empty([len(f_list)])
     exp_store = np.empty([len(f_list)])
     airmass_store = np.empty([len(f_list)])
+    ccdtemp_store = np.empty([len(f_list)])
+    envtemp_store = np.empty([len(f_list)])
+    humidity_store = np.empty([len(f_list)])
+    relskytemp_store = np.empty([len(f_list)])
+    seeing_store = np.empty([len(f_list)])
+    wind_store = np.empty([len(f_list)])
+    tmtdew_store = np.empty([len(f_list)])
+    telfocus_store = np.empty([len(f_list)])
 
     #Create variable to log bkg param combinations iterating through 
     dt = np.dtype([('bkg_parameter_combo', 'S10')])
@@ -290,42 +273,107 @@ def run_phot(dir_, pattern, p, name):
             data = f[0][:, :]
             header = f[0].read_header()
 
-            #Load header data from image
-            ra = header[hRA]
-            dec = header[hDEC]
-            jd = header[hJD]
+            #Load most important header data from image, used for cals
             try:
-                hjd = header[hHJD]
+                ra = header[p.ra]
             except:
-                if all(v is not None for v in [hOBSLONG, hOBSLAT, hOBSALT]):
-                    hjd = convert_jd_hjd(
-                            jd, ra, dec, coord.EarthLocation.from_geodetic(
-                                hOBSLONG, hOBSLAT, hOBSALT)) 
-                else:
-                    hjd = np.nan
+                ra = p.ra
             try:
-                bjd = header[hBJD]
+                dec = header[p.dec]
             except:
-                if all(v is not None for v in [hOBSLONG, hOBSLAT, hOBSALT]):
-                    bjd = convert_jd_bjd(
+                dec = p.dec
+            try:
+                lon = header[p.lon]
+            except:
+                lon = p.lon
+            try:
+                lat = header[p.lat]
+            except:
+                lat = p.lat
+            try:
+                alt = header[p.alt]
+            except:
+                alt = p.alt
+            exp = header[p.exposure] # exception not an option
+            jd = header[p.jd] # exception not an option
+
+            #Store variables
+            exp_store[count-1] = exp
+            jd_store[count-1] = jd
+            try:
+                hjd_store[count-1] = header[p.hjd]
+            except:
+                if all(v is not None for v in [p.lon, p.lat, p.alt]):
+                    hjd_store[count-1] = convert_jd_hjd(
                             jd, ra, dec, coord.EarthLocation.from_geodetic(
-                                hOBSLONG, hOBSLAT, hOBSALT)) 
+                                p.lon, p.lat, p.alt)) 
                 else:
-                    bjd = np.nan
-            exp = header[hEXP]
-            gain = header[hGAIN]
-            binfactor = header[hBINFAC]
-            airmass = header[hAIRMASS]
-    
-        # Store frame-only dependent times
-        jd_store[count-1] = jd
-        hjd_store[count-1] = hjd
-        bjd_store[count-1] = bjd
-        exp_store[count-1] = exp
-        if type(airmass) == float:
-            airmass_store[count-1] = airmass
-        else:
-            airmass_store[count-1] = 0.0
+                    hjd_store[count-1] = np.nan
+            try:
+                bjd_store[count-1] = header[p.bjd]
+            except:
+                if all(v is not None for v in [p.lon, p.lat, p.alt]):
+                    bjd_store[count-1] = convert_jd_bjd(
+                            jd, ra, dec, coord.EarthLocation.from_geodetic(
+                                p.lon, p.lat, p.alt)) 
+                else:
+                    bjd_store[count-1] = np.nan
+            try:
+                gain = header[p.preamp]
+            except:
+                gain = p.preamp
+            try:
+                platescale = header[p.platescale]
+            except:
+                platescale = p.platescale
+            try:
+                hbinfactor = header[p.hbin]
+            except:
+                hbinfactor = p.hbin
+            try:
+                vbinfactor = header[p.vbin]
+            except:
+                vbinfactor = p.vbin
+            if hbinfactor == vbinfactor:
+                binfactor = hbinfactor
+            else:
+                binfactor = max(hbinfactor, vbinfactor)
+            try:
+                airmass_store[count-1] = header[p.airmass]
+            except:
+                airmass_store[count-1] = p.airmass
+            try:
+                ccdtemp_store[count-1] = header[p.temp]
+            except:
+                ccdtemp_store[count-1] = np.nan
+            try:
+                envtemp_store[count-1] = header[p.envtem]
+            except:
+                envtemp_store[count-1] = np.nan
+            try:
+                humidity_store[count-1] = header[p.humidit]
+            except:
+                humidity_store[count-1] = np.nan
+            try:
+                relskytemp_store[count-1] = header[p.relskyt]
+            except:
+                relskytemp_store[count-1] = np.nan
+            try:
+                seeing_store[count-1] = header[p.seeing]
+            except:
+                seeing_store[count-1] = np.nan
+            try:
+                wind_store[count-1] = header[p.wind]
+            except:
+                wind_store[count-1] = np.nan
+            try:
+                tmtdew_store[count-1] = header[p.tmtdew]
+            except:
+                tmtdew_store[count-1] = np.nan
+            try:
+                telfocus_store[count-1] = header[p.telfocus]
+            except:
+                telfocus_store[count-1] = np.nan
 
         #Initialise count of number of bkg params gone through
         bkg_count = 0
