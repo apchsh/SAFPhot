@@ -24,6 +24,7 @@ def get_params():
     image headers and if so set that value, otherwise it will set the value to
     the one specified.'''
 
+    params["ANALYSER"] = "CHAUSHEV" # Person who analysed the data
     params["DATE-OBS"] = "GPSSTART" # Start date/time of observation
     params["OBSERVER"] = "OBSERVER" # Observer name
     params["OBSERVATORY"] = "SAAO" # Observatory
@@ -48,15 +49,6 @@ def get_params():
     params["LAT"] = 0.334 # latitude of telescope in Earth geodetic co-ords
     params["LON"] = 0.334 # longitude of telescope in Earth geodetic co-ords
     params["ALT"] = 300.0 # Altitude of telescope in meters
-    params["ANALYSER"] = "" # Person who analysed the data
-    params["TEMP"] = "TEMP" # CCD temperature in degs Celcius
-    params["ENVTEM"] = "ENVTEM" # Environment temperature in degs Celcius
-    params["HUMIDIT"] = "HUMIDIT" # Humidity in percent
-    params["RELSKYT"] = "RELSKYT" # Relative sky temperature
-    params["SEEING"] = "SEEING" # Seeing in arcseconds
-    params["WIND"] = "WIND" # Wind speed in km/s
-    params["TMTDEW"] = "TMTDEW" # Environment temperature minus dew point
-    params["TELFOCUS"] = "TELFOCUS" # Telescope focus
 
     #OUTPUT KEYWORDS 
     params["OUT_DIR"] = "" #output directory, if blank the input dir is used 

@@ -219,14 +219,6 @@ def run_phot(dir_, pattern, p, name):
     frame_shift_y_store = np.empty([len(f_list)])
     exp_store = np.empty([len(f_list)])
     airmass_store = np.empty([len(f_list)])
-    ccdtemp_store = np.empty([len(f_list)])
-    envtemp_store = np.empty([len(f_list)])
-    humidity_store = np.empty([len(f_list)])
-    relskytemp_store = np.empty([len(f_list)])
-    seeing_store = np.empty([len(f_list)])
-    wind_store = np.empty([len(f_list)])
-    tmtdew_store = np.empty([len(f_list)])
-    telfocus_store = np.empty([len(f_list)])
 
     #Create variable to log bkg param combinations iterating through 
     dt = np.dtype([('bkg_parameter_combo', 'S10')])
@@ -342,38 +334,6 @@ def run_phot(dir_, pattern, p, name):
                 airmass_store[count-1] = header[p.airmass]
             except:
                 airmass_store[count-1] = p.airmass
-            try:
-                ccdtemp_store[count-1] = header[p.temp]
-            except:
-                ccdtemp_store[count-1] = np.nan
-            try:
-                envtemp_store[count-1] = header[p.envtem]
-            except:
-                envtemp_store[count-1] = np.nan
-            try:
-                humidity_store[count-1] = header[p.humidit]
-            except:
-                humidity_store[count-1] = np.nan
-            try:
-                relskytemp_store[count-1] = header[p.relskyt]
-            except:
-                relskytemp_store[count-1] = np.nan
-            try:
-                seeing_store[count-1] = header[p.seeing]
-            except:
-                seeing_store[count-1] = np.nan
-            try:
-                wind_store[count-1] = header[p.wind]
-            except:
-                wind_store[count-1] = np.nan
-            try:
-                tmtdew_store[count-1] = header[p.tmtdew]
-            except:
-                tmtdew_store[count-1] = np.nan
-            try:
-                telfocus_store[count-1] = header[p.telfocus]
-            except:
-                telfocus_store[count-1] = np.nan
 
         #Initialise count of number of bkg params gone through
         bkg_count = 0
