@@ -22,7 +22,7 @@ class Mapper():
 def get_airmass(jd, ra, dec, loc):
     
     #Get time in correct format
-    time = Time(jd, format='jd', scale='utc', precision=7, location=loc)
+    time = Time(jd, format='jd', scale='utc', location=loc)
     
     #Get object sky coords in correct format
     coords = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
@@ -36,14 +36,14 @@ def get_airmass(jd, ra, dec, loc):
     return airmass
 
 def correct_time(header, frame_num, m, deadtime=0.00676):
-    '''Function to fix the UTC time for each frame.'''
+    '''Function to correct time of each frame to mid-exposure time'''
 
     #Load time from header
     t = Time(m.dateobs, format='isot', scale='utc')
     
     #Calculate centre of exposure time for a given frame in data cube
-    dt = TimeDelta(val=frame_num*(m.exposure+ deadtime) +
-        (m.exposure + deadtime) * 0.5, format='sec')
+    dt = TimeDelta(val=((frame_num * (m.exposure + deadtime))
+        + ((m.exposure + deadtime) * 0.5)), format='sec')
     return t + dt
 
 def convert_jd_hjd(jd, ra, dec, loc):
@@ -143,7 +143,7 @@ def unpack_reduce(files, calframes, params, verbose=True):
             #Write HDU as its own FITS
             fname = basename(file_).replace('.fits', '.%04d.fits' % count)
             hdu = fits.PrimaryHDU(red_data, header=temp_header)
-            hdu.writeto(join(outdir, fname), clobber=True)
+            hdu.writeto(join(outdir, fname), overwrite=True)
         f.close()
 
     print "Reduction and unpacking complete." 
