@@ -19,7 +19,6 @@ from scipy import ndimage
 from copy import copy
 from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
 from photsort import get_all_files # SAFPhot script
-from pprint import pprint
 
 def makeheader(m):
     #Make general header for each HDU
@@ -219,7 +218,6 @@ def run_phot(dir_, pattern, p, name):
             'equinox', 'platescale', 'lon', 'lat', 'alt', 'hbin', 'vbin',
             'preamp'}
     m = Mapper(firsthdr, p, keylist)
-    pprint(vars(m))
 
     #Get output file general header
     hdr = makeheader(m)

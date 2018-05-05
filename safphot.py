@@ -42,10 +42,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     #Check for optional arguments
+    pattern = ""
     if args.pattern is not None:
         pattern = args.pattern
-    else:
-        pattern = ""
 
     #Load the list of parameters 
     p = params.get_params()
@@ -53,14 +52,14 @@ if __name__ == '__main__':
     if args.mode in ('both', 'reduction'):
 
         #Run the file detection and sorting code
-        files = ps.fits_sort(p, args.dir_in, args.pattern, verbose=True)
+        files = ps.fits_sort(p, args.dir_in, pattern, verbose=True)
         files.summary_ra_dec()
 
         #Create the calibration master files (returns dict of frames)
         calframes = red.create_calframes(files, verbose=True)
 
         #Unpack + reduce the files
-        up.unpack_reduce(files, calframes, verbose=True)
+        up.unpack_reduce(files, calframes, p, verbose=True)
 
     if args.mode in ('both', 'photometry'):
  

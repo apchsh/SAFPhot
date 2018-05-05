@@ -26,13 +26,13 @@ def get_params():
     
     #Setting compulsory
     params["TARGET"] = "OBJECT" # Target/object name
-    params["EXPOSURE"] = "EXPOSURE" # Exposure time
-    params["RA"] = "OBJRA" # RA of target object
-    params["DEC"] = "OBJDEC" # DEC of target object
+    params["EXPOSURE"] = "EXPOSURE" # Exposure time [s]
+    params["RA"] = "OBJRA" # RA of target object [h:m:s]
+    params["DEC"] = "OBJDEC" # DEC of target object [d:m:s]
     params["EPOCH"] = "OBJEPOCH" # EPOCH of target coordinates
     params["VBIN"] = "VBIN" # CCD vertical bin factor
     params["HBIN"] = "HBIN" # CCD horizontal bin factor
-    params["PREAMP"] = "PREAMP" # Preamplifier gain e-/ADU
+    params["PREAMP"] = "PREAMP" # Preamplifier gain [e-/ADU]
     params["JD"] = "JD" # Julian Date
     params["DATEOBS"] = "GPSSTART" # Start date/time of observation
     params["OBSERVER"] = "OBSERVER" # Observer name
@@ -51,18 +51,18 @@ def get_params():
     params["BJD"] = "BJD" # Barycentric Julian Date
     params["LAT"] = 0.334 # latitude of telescope in Earth geodetic co-ords
     params["LON"] = 0.334 # longitude of telescope in Earth geodetic co-ords
-    params["ALT"] = 300.0 # Altitude of telescope in meters
+    params["ALT"] = 300.0 # Altitude of telescope [meters]
 
     #OUTPUT KEYWORDS 
-    params["OUT_DIR"] = "" #output directory, if blank the input dir is used 
-    params["RED_DIR"] = "reduction/" #sub-directory of output folder in which to store 
-                                    #reduced files
-    params["PHOT_DIR"] = "photometry/" #sub-directory of input folder in which to store
-                                    #photometric files
-    params["PHOT_PREFIX"] = "SAAO_" #prefix to attach to the photometric output
-    params["RED_PREFIX"] = "CAL_" #prefix to attach to reduction output 
-    params["BIASID"] = "BIAS" #keyword to id BIAS frames 
-    params["FLATID"] = "FLAT" #keyword to id FLAT frames
+    params["OUT_DIR"] = "" # output directory, if blank the input dir is used 
+    params["RED_DIR"] = "reduction/" # sub-directory of output folder in which to store 
+                                    # reduced files
+    params["PHOT_DIR"] = "photometry/" # sub-directory of input folder in which to store
+                                    # photometric files
+    params["PHOT_PREFIX"] = "SAAO_" # prefix to attach to the photometric output
+    params["RED_PREFIX"] = "CAL_" # prefix to attach to reduction output 
+    params["BIASID"] = "BIAS" # keyword to id BIAS frames 
+    params["FLATID"] = "FLAT" # keyword to id FLAT frames
 
     return Validator(params) 
 

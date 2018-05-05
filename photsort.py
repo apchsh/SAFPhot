@@ -28,13 +28,13 @@ class fits_sort():
     target = []; target_filter = []; target_name = []; 
     target_ra = []; target_dec = []
 
-    def __init__(self, params, search_dir, camera, verbose=False):
+    def __init__(self, params, search_dir, pattern, verbose=False):
 
 
         if path.isdir(search_dir):
 
             # run the main function of the object, search and classify files
-            self.search(params, search_dir, camera, verbose)
+            self.search(params, search_dir, pattern, verbose)
 
             self.dir_ = search_dir
 
@@ -42,12 +42,12 @@ class fits_sort():
 
             raise InputDirException("%s does not exist." % search_dir)
 
-    def search(self, params, search_dir, camera, verbose):
+    def search(self, params, search_dir, pattern, verbose):
 
         if verbose: print "Searching directory %s" % search_dir
 
         # Find all files
-        token = camera +  "_*.fits" 
+        token = pattern + "*.fits" 
         files =  get_all_files(search_dir, extension=token)
 
         if verbose: print "%i files found." % len(files)
@@ -57,7 +57,7 @@ class fits_sort():
             # CHECK FILE EXISTS AND IS VALID
 
             # OPEN FILES
-            f = fits.open(file_)  
+            f = fits.open(file_) 
             fobstype = f[0].header[params.obstype]
             fobject = f[0].header[params.target]
             if not(params.filtera == ''):
