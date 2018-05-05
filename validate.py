@@ -28,6 +28,13 @@ def float_positive(num):
             return True
         else: return False 
 
+def float_or_int_positive(num):
+    
+    if type(num) == float or type(num) == int:
+        if num >= 0:
+            return True
+        else: return False 
+
 def int_positive(num):
 
     if type(num) == int:
@@ -78,10 +85,10 @@ class Validator():
                "RADII":list_float,
                "BOX_SIZE":list_int,
                "FILTER_SIZE":list_float,
-               "SOURCE_THRESH":float_positive,
-               "BKG_APP_RAD":float_positive,
-               "NUM_BKG_APPS":float_positive,
-               "DATE-OBS":check_string, 
+               "SOURCE_THRESH":float_or_int_positive,
+               "BKG_APP_RAD":float_or_int_positive,
+               "NUM_BKG_APPS":float_or_int_positive,
+               "DATEOBS":check_string, 
                "OBSERVER":check_string,
                "OBSERVATORY":check_string,
                "TELESCOPE":check_string,

@@ -23,27 +23,30 @@ def get_params():
     of SAFPhot is to first check whether the keyword is defined within the
     image headers and if so set that value, otherwise it will set the value to
     the one specified.'''
-
-    params["ANALYSER"] = "CHAUSHEV" # Person who analysed the data
-    params["DATE-OBS"] = "GPSSTART" # Start date/time of observation
-    params["OBSERVER"] = "OBSERVER" # Observer name
-    params["OBSERVATORY"] = "SAAO" # Observatory
-    params["TELESCOPE"] = "TELESCOP" # Telescope
-    params["INSTRUMENT"] = "INSTURUME" # Instrument
-    params["FILTERA"] = "FILTERA" # Filter, first wheel
-    params["FILTERB"] = "FILTERB" # Filter, second wheel
+    
+    #Setting compulsory
     params["TARGET"] = "OBJECT" # Target/object name
     params["EXPOSURE"] = "EXPOSURE" # Exposure time
-    params["OBSTYPE"] = "OBSTYPE" #keyword for observation type
     params["RA"] = "OBJRA" # RA of target object
     params["DEC"] = "OBJDEC" # DEC of target object
-    params["EPOCH"] = "EPOCH" # EPOCH of target coordinates
-    params["EQUINOX"] = "EQUINOX" # Equinox of target coordinates
+    params["EPOCH"] = "OBJEPOCH" # EPOCH of target coordinates
     params["VBIN"] = "VBIN" # CCD vertical bin factor
     params["HBIN"] = "HBIN" # CCD horizontal bin factor
     params["PREAMP"] = "PREAMP" # Preamplifier gain e-/ADU
-    params["AIRMASS"] = "AIRMASS" # Airmass during observation
     params["JD"] = "JD" # Julian Date
+    params["DATEOBS"] = "GPSSTART" # Start date/time of observation
+    params["OBSERVER"] = "OBSERVER" # Observer name
+    params["OBSERVATORY"] = "SAAO" # Observatory
+    params["TELESCOPE"] = "TELESCOP" # Telescope
+    params["INSTRUMENT"] = "INSTRUME" # Instrument
+    params["FILTERA"] = "FILTERA" # Filter, first wheel
+    params["FILTERB"] = "FILTERB" # Filter, second wheel
+    params["OBSTYPE"] = "OBSTYPE" #keyword for observation type
+    
+    #Setting optional
+    params["ANALYSER"] = "CHAUSHEV" # Person who analysed the data
+    params["EQUINOX"] = "OBJEQUIN" # Equinox of target coordinates
+    params["AIRMASS"] = "AIRMASS" # Airmass during observation
     params["HJD"] = "HJD" # Heliocentric Julian Date
     params["BJD"] = "BJD" # Barycentric Julian Date
     params["LAT"] = 0.334 # latitude of telescope in Earth geodetic co-ords

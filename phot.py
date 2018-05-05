@@ -18,35 +18,70 @@ from time import time as time_
 from scipy import ndimage
 from copy import copy
 from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
-from photsort import get_all_files
+from photsort import get_all_files # SAFPhot script
+from pprint import pprint
 
 def makeheader(m):
     #Make general header for each HDU
+    (dateobs_com, observer_com, analyser_com, observatory_com, telescope_com,
+    instrument_com, filtera_com, filterb_com, platescale_com, target_com, ra_com,
+    dec_com, epoch_com, equinox_com) = (None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None)
+    
+    if hasattr(m, 'dateobs_com'): datecoms_com = m.dateobs_com
+    else: dateobs_com = 'Start date and local start time of observations'
+    if hasattr(m, 'observer_com'): observer_com = m.observer
+    else: observer_com = 'Observer who acquired the data'
+    if hasattr(m, 'analyser_com'): analyser_com = m.analyser_com
+    else: analyser_com = 'Person who analysed the data'
+    if hasattr(m, 'observatory_com'): observatory_com = m.observatory_com
+    else: observatory_com = 'Observatory'
+    if hasattr(m, 'telescope_com'): telescope_com = m.telescope_com
+    else: telescope_com = 'Telescope'
+    if hasattr(m, 'instrument_com'): instrument_com = m.instrument_com
+    else: instrument_com = 'Instrument'
+    if hasattr(m, 'filtera_com'): filtera_com = m.filtera_com
+    else: filtera_com = 'The active filter in wheel A'
+    if hasattr(m, 'filterb_com'): filterb_com = m.filterb_com
+    else: filterb_com = 'The active filter in wheel B'
+    if hasattr(m, 'platescale_com'): platescale_com = m.platescale_com
+    else: platescale_com = 'Platescale [arcsec/pixel]'
+    if hasattr(m, 'target_com'): target_com = m.target_com
+    else: target_com = 'Target object'
+    if hasattr(m, 'ra_com'): ra_com = m.ra_com
+    else: ra_com = 'RA of target object'
+    if hasattr(m, 'dec_com'): dec_com = m.dec_com
+    else: dec_com = 'DEC of target object'
+    if hasattr(m, 'epoch_com'): epoch_com = m.epoch_com
+    else: epoch_com = 'Target object coordinate epoch'
+    if hasattr(m, 'hequinox_com'): equinox_com = m.equinox_com
+    else: equinox_com = 'Target object coordinate equinox'
+
     hlist = [{'name':'DATE-OBS', 'value':m.dateobs,
-                    'comment':m.dateobs_com},
+                    'comment':dateobs_com},
             {'name':'OBSERVER', 'value':m.observer,
-                    'comment':m.observer_com},
+                    'comment':observer_com},
             {'name':'ANALYSER', 'value':m.analyser,
-                    'comment':m.analyser_com},
+                    'comment':analyser_com},
             {'name':'OBSERVAT', 'value':m.observatory,
-                    'comment':'Observatory'},
-            {'name':'TELESCOP', 'value':m.telescop,
-                    'comment':m.telescop_com},
-            {'name':'INSTRUMT', 'value':m.instrumt,
-                    'comment':m.instrumt_com},
+                    'comment':observatory_com},
+            {'name':'TELESCOP', 'value':m.telescope,
+                    'comment':telescope_com},
+            {'name':'INSTRUMT', 'value':m.instrument,
+                    'comment':instrument_com},
             {'name':'FILTERA', 'value':m.filtera,
-                    'comment':m.filtera_com},
+                    'comment':filtera_com},
             {'name':'FILTERB', 'value':m.filterb,
-                    'comment':m.filterb_com},
+                    'comment':filterb_com},
             {'name':'PLATESCL', 'value':m.platescale,
-                    'comment':'platescale [arcsec/pixel]'},
-            {'name':'OBJECT', 'value':m.obj, 'comment':m.obj_com},
-            {'name':'RA', 'value':m.ra, 'comment':m.ra_com},
-            {'name':'DEC', 'value':m.dec, 'comment':m.dec_com},
+                    'comment':platescale_com},
+            {'name':'TARGET', 'value':m.target, 'comment':target_com},
+            {'name':'RA', 'value':m.ra, 'comment':ra_com},
+            {'name':'DEC', 'value':m.dec, 'comment':dec_com},
             {'name':'EPOCH', 'value':m.epoch,
-                    'comment':m.epoch_com},
+                    'comment':epoch_com},
             {'name':'EQUINOX', 'value':m.equinox,
-                    'comment':m.equinox_com}
+                    'comment':equinox_com}
             ]
     return hlist
 
@@ -126,16 +161,15 @@ class Mapper():
     def __init__(self, hdr, p, keylist):
         for key in keylist:
             try:
-                setattr(self, key, hdr[key.upper()])
+                setattr(self, key.lower(), hdr[getattr(p, key)])
             except:
-                setattr(self, key, p.key)
+                setattr(self, key.lower(), getattr(p, key))
             try:
-                setattr(self, key+'_com', hdr.get_comment( key.upper() ))
+                setattr(self, key.lower()+'_com',
+                        hdr.get_comment(getattr(p,key)))
             except:
                 pass
                 
-        return self
-
 def run_phot(dir_, pattern, p, name):
 
     #Define background box sizes to use
@@ -149,7 +183,7 @@ def run_phot(dir_, pattern, p, name):
 
     #Define num apertures and radius to use for bkg residuals
     bkg_rad = p.bkg_app_rad
-    nbapps = p.num_bkg.apps
+    nbapps = p.num_bkg_apps
 
     #Define source detection threshold
     thresh = p.source_thresh
@@ -180,11 +214,13 @@ def run_phot(dir_, pattern, p, name):
         firsthdr = fi[0].read_header()
 
     #Try and map parameters to header keywords otherwise set the keyword
-    keylist = [date-obs, observer, analyser, observatory, telescope,
-            instrument, filtera, filterb, target, ra, dec, epoch, equinox,
-            platescale, lon, lat, alt, hbin, vbin, airmass, preamp]
+    keylist = {'dateobs', 'observer', 'analyser', 'observatory', 'telescope',
+            'instrument', 'filtera', 'filterb', 'target', 'ra', 'dec', 'epoch',
+            'equinox', 'platescale', 'lon', 'lat', 'alt', 'hbin', 'vbin',
+            'preamp'}
     m = Mapper(firsthdr, p, keylist)
-    
+    pprint(vars(m))
+
     #Get output file general header
     hdr = makeheader(m)
 
@@ -286,11 +322,15 @@ def run_phot(dir_, pattern, p, name):
             #Set frame dependent variables
             exp = header[p.exposure] # existence compulsory
             jd = header[p.jd] # existence compulsory
-            try:
-                binfactor = m.hbin
-            except:
-                binfactor = m.vbin
+            binfactor = 1.0
 
+            try:
+                binfactor = float(m.hbin)
+            except:
+                try:
+                    binfactor = float(m.vbin)
+                except:
+                    pass
             #Store frame dependent variables
             exp_store[count-1] = exp
             jd_store[count-1] = jd
@@ -335,7 +375,7 @@ def run_phot(dir_, pattern, p, name):
                 mask stars for bkg residual measurement'''
                 objects_bkg, segmap_bkg = sep.extract(data_sub, thresh=1.0, 
                         err=bkg.globalrms, segmentation_map=True)
-                
+
                 #Measure background flux residuals
                 bflux, bfluxerr, bflag = sep.sum_circle(data_sub, bapp_x, bapp_y,
                             bkg_rad, err=bkg.globalrms, mask=segmap_bkg,
@@ -412,10 +452,11 @@ def run_phot(dir_, pattern, p, name):
         delta_t = time_()-start_time # time to do float(count) / n_steps % of caluculation
         time_incr = delta_t/(float(count+1) / n_steps) # seconds per increment
         time_left = time_incr*(1- float(count) / n_steps)
-        m, s = divmod(time_left, 60)
-        h, m = divmod(m, 60)
+        mins, s = divmod(time_left, 60)
+        h, mins = divmod(mins, 60)
         sys.stdout.write("\r[{0}{1}] {2:5.1f}% - {3:02}h:{4:02}m:{05:.2f}s".
-             format('#' * nn, ' ' * (meter_width - nn), 100*float(count)/n_steps,h,m,s))
+             format('#' * nn, ' ' * (meter_width - nn),
+                 100*float(count)/n_steps,h,mins,s))
   
     #Save each data array as a HDU in FITS file
     with fitsio.FITS(output_name, "rw", clobber=True) as g:
@@ -432,13 +473,12 @@ def run_phot(dir_, pattern, p, name):
         g.write(pos_store_donuts_y, header=header_2D_pos, extname="OBJ_CCD_Y_UNREFINED")
         g.write(fwhm_store, header=header_2D_fwhm, extname="MEAN_OBJ_FWHM")
         g.write(jd_store, header=header_1D_frames, extname="JD")
-        g.write(hjd_store, header=header_1D_frames, extname="HJD")
-        g.write(bjd_store, header=header_1D_frames, extname="BJD")
+        g.write(hjd_store, header=header_1D_frames, extname="HJD_utc")
+        g.write(bjd_store, header=header_1D_frames, extname="BJD_tdb")
         g.write(frame_shift_x_store, header=header_1D_frames, extname="FRAME_SHIFT_X")
         g.write(frame_shift_y_store, header=header_1D_frames, extname="FRAME_SHIFT_Y")
         g.write(exp_store, header=header_1D_frames, extname="EXPOSURE_TIME")
         g.write(airmass_store, header=header_1D_frames, extname="AIRMASS")
-        #Variables
         g.write(radii, header=hdr, extname="VARIABLES_APERTURE_RADII")
         g.write(bkg_params, header=header_bkg_params, extname="VARIABLES_BKG_PARAMS")
 
