@@ -34,7 +34,7 @@ def get_params():
     params["HBIN"] = "HBIN" # CCD horizontal bin factor
     params["PREAMP"] = "PREAMP" # Preamplifier gain [e-/ADU]
     params["JD"] = "JD" # Julian Date
-    params["DATEOBS"] = "GPSSTART" # Start date/time of observation
+    params["DATEOBS"] = "GPSSTART" # Start time of obs [YYYY-MM-DDTHH:MM:SS.ss]
     params["OBSERVER"] = "OBSERVER" # Observer name
     params["OBSERVATORY"] = "SAAO" # Observatory
     params["TELESCOPE"] = "TELESCOP" # Telescope
