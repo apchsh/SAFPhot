@@ -3,13 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SAFPhot's documentation!
+SAFPhot: Super Automatic Fast PHOTometric pipeline: SAFPhot 
 ===================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+       
+Installation
+============
 
+Quickstart
+==========
+
+Tutorial
+========
+
+API
+===
+
+Troubleshooting
+===============
+
+Acknowledgements
+===============
 
 
 Indices and tables
