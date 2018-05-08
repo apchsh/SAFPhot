@@ -13,11 +13,12 @@ import matplotlib.pyplot as plt
 import warnings; warnings.simplefilter('ignore') 
 import sys
 
-from astropy.stats import sigma_clip
 from os.path import join
 from astropy.table import Table
+from astropy.time import Time
 from fitsio import FITS
 from glob import glob
+from matplotlib.backends.backend_pdf import PdfPages
 
 warnings.simplefilter('ignore')
 
@@ -46,7 +47,7 @@ def bin_to_size(data, num_points_bin, block_exposure_times,
             data_block = data_block[mask_block]
 
             #Calculate number of points per bin for block
-            npb = num_points_bin / block_exposure_times[j]
+            npb = int(num_points_bin / block_exposure_times[j])
 
             #bin block
             num_bins = int(len(data_block) / npb)
@@ -92,97 +93,114 @@ def air_corr(flux, xjd, xjd_oot_l=99, xjd_oot_u=99):
     flux_r /= p1
     return flux_r
 
-def make_lc_plots(flux, err, xjd, name, block_exp_t, block_ind_bound, 
-        comp_name="mean", binning=150, norm_flux_lower=0, norm_flux_upper=99,
-        plot_lower=None, plot_upper=None, xjd_oot_l=99, xjd_oot_u=99): 
-    '''Main fuction to perform the plotting of the lightcurves. Takes in
-    a flux and jd array as well as some parameters for the binning and 
-    clipping to be performed on the lightcurve. A comparison star name
-    is passed in as well. '''
-
-    #Copy data to prevent overwriting input arrays
-    plot_flux = np.copy(flux)
-    plot_err = np.copy(err)
-    plot_xjd = np.copy(xjd)
-
-    #Check sizes are the same
-    assert(plot_flux.shape == plot_xjd.shape)
-    assert(plot_err.shape == plot_xjd.shape)
-
-    #Remove offset from xjd
-    off = np.floor(np.min(plot_xjd))
-    xjd_o = plot_xjd - off
-    xjd_oot_l -= off
-    xjd_oot_u -= off
+def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
+        xlim=[None, None], ylim=[None, None],
+        xlabel=None, plot_oot_l_p=False, plot_oot_u_p=False,
+        plot_rms=False, rms_mask=None, inc=False, hold=False):
+   
+    #Retrieve global variables
+    global npp; global n_plotted; global n_plot_tot
+    global fig; global figs; global ax; global axf; global used_axes
     
-    #Airmass correct flux
-    #plot_flux = air_corr(plot_flux, xjd_o, xjd_oot_l, xjd_oot_u)
+    #Check whether new plot page is required
+    if (npp == 0) and (hold is False):
+        plt.cla()
+        
+        #Initialise variables
+        used_axes = []
+        
+        #Define figure and axes
+        fig, ax = plt.subplots(
+                nrows, ncols, figsize=figsize, dpi=dpi, sharex=True)
+        axf = ax.flat
+        fig.suptitle(target_name+', '+observat+' '
+                +telescop+', '+filtera+', '+str(dateobs))
 
-    #Save data to FITS file
-    save_data_fits_err(plot_xjd, plot_flux, plot_err, name, comp_name)
-    
+    #Copy data
+    x = np.copy(x_in) - xoffset
+    y = np.copy(y_in)
+
     #Clip outliers
-    plot_flux[(plot_flux > norm_flux_upper) | (plot_flux < norm_flux_lower)] = np.nan
-
-    #Get finite data mask
-    mask = np.isfinite(plot_flux)
-
-    #bin data
-    flux_bin = bin_to_size(plot_flux, binning, block_exp_t, block_ind_bound, mask)
-    xjd_bin = bin_to_size(xjd_o, binning, block_exp_t, block_ind_bound, mask)
-
-    #Save binned data to FITS file
-    save_data_fits(xjd_bin+off, flux_bin, name, comp_name + "_bin")
-
-    #Set up plot
-    plt.cla()
-    plt.figure(figsize=(8,6), dpi=100)
+    if xlim[0] is not None:
+        x[x < xlim[0]] = np.nan
+    if xlim[1] is not None:
+        x[x > xlim[1]] = np.nan
+    if ylim[0] is not None:
+        y[y < ylim[0]] = np.nan
+    if ylim[1] is not None:
+        y[y > ylim[1]] = np.nan
     
-    #Plot unbinned data
-    plt.scatter(xjd_o, plot_flux, alpha=0.5, zorder=1, c='b')
-    
-    #Plot binned data
-    plt.scatter(xjd_bin, flux_bin, zorder=2, c='r')
-
-    #Plot expected ingress/egress
-    if xjd_oot_l is not 99:
-        plt.axvline(x=xjd_oot_l, c='g')
-    if xjd_oot_u is not 99:
-        plt.axvline(x=xjd_oot_u, c='g')
-
-    #Labels, titles and scaling
-    oot_mask = ((xjd_bin < xjd_oot_l) | (xjd_bin > xjd_oot_u))
-    frms = (np.nanstd(flux_bin[oot_mask], ddof=1) /
-        np.nanmedian(flux_bin[oot_mask]))
-    plt.title(name + ', FRMS: %7.5f' % frms)
-    plt.xlabel('BJD - %d' %off)
-    plt.ylabel('Relative flux')
-    
-    if (plot_upper is None) and (plot_lower is None):
-        plt.autoscale(enable=True, axis='y')
+    #RMS
+    if rms_mask is not None:
+        mask = rms_mask
     else:
-        plt.ylim((plot_lower, plot_upper))
+        mask = np.ones(x.shape[0], dtype=bool)
+    rms = (np.nanstd(y[mask], ddof=1) / np.nanmedian(y[mask]))
+    
+    #Data label
+    datalabel = 'RMS: %7.5f' % rms
 
-    #Save plot as png
-    png_name = join(dir_,"SAAO_"+name + '_%s.png' % comp_name) 
-    plt.savefig(png_name, bbox_inches="tight")
-    plt.close()
+    #Plot
+    axf[npp].scatter(x, y, label=datalabel, s=s, c=c, alpha=alpha)
 
-def save_data_fits(xjd, flux, err, file_name, comp_name):
-    '''Function to save the data as a fits file usings the astropy.io.fits
-    library a.k.a PyFits.'''
+    #Axes labels
+    cond_1 = (xlabel is not None) and (npp >= (nrows*ncols)-ncols)
+    cond_2 = (xlabel is not None) and (n_plot_tot-n_plotted <= ncols)
+    if any([cond_1, cond_2]) :
+        axf[npp].tick_params(axis='x', labelbottom=True)
+        axf[npp].set_xlabel(xlabel + " (-%d)" %xoffset)
+    if ylabel is not None:
+        axf[npp].set_ylabel(ylabel)
+
+    #Legend
+    if plot_rms is True:
+        axf[npp].legend()
+
+    #X lines
+    if (xjd_oot_l_p is not None) and (plot_oot_l_p is True):
+        axf[npp].axvline(x=xjd_oot_l_p - xoffset, c='g')
+    if (xjd_oot_u_p is not None) and (plot_oot_u_p is True):
+        axf[npp].axvline(x=xjd_oot_u_p - xoffset, c='g')
+    
+    #Increment plot counter
+    if inc is True:
+        used_axes.append(axf[npp])
+        npp += 1
+        n_plotted += 1
+
+    #If page finished
+    if (n_plot_tot - n_plotted == 0) or (npp >= (nrows*ncols)):
+   
+        #Remove empty axes:
+        for ii in axf:
+            if ii not in used_axes:
+                ii.remove()
+
+        #Save figure
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        figs.append(fig)
+    
+        #Reset plot counter
+        if npp >= (nrows*ncols):
+            npp = 0
+
+def save_data_fits(table, header, file_name, comp_name):
 
     #Save data as FITS
-    t_out = Table([xjd, flux, err], names=('BJD', 'Relative flux', 'Err'))
     fits_name = join(dir_, "SAAO_"+ file_name + '_%s.fits' % comp_name) 
-    t_out.write(fits_name, overwrite=True)
+    table.write(fits_name, header=header, overwrite=True)
 
-def differential_photometry(i_flux, i_err, obj_index, comp_index, norm_mask):
+def differential_photometry(i_flux, i_err, obj_index, comp_index,
+        norm_mask=None):
 
     #Copy data to prevent overwriting of input arrays
     in_flux = np.copy(i_flux)
     in_err = np.copy(i_err)
-   
+
+    #If no norm_mask, set to array of ones
+    if norm_mask is None:
+        norm_mask = np.ones(in_flux.shape[-1], dtype=bool)
+
     #create variables to store the comparison star flux and flux err
     comp_flux = np.zeros((in_flux.shape[0], in_flux.shape[2], in_flux.shape[3]))
     comp_flux_err = np.zeros((in_err.shape[0], in_err.shape[2], in_err.shape[3]))
@@ -191,13 +209,13 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index, norm_mask):
     in_flux[in_flux == 0] = np.nan
     in_err[in_err == 0] = np.nan
    
-    #Get normalised object flux and error
+    #Get object flux and error
     obj_flux = in_flux[:, obj_index, :, :]
     obj_flux_err = in_err[:, obj_index, :, :]
     '''obj_norm = (np.nanmedian((obj_flux[:, :, norm_mask]), 
                 axis=2).reshape((in_flux.shape[0], in_flux.shape[2], 1)))'''
     
-    #Get normalised comparison flux and error
+    #Get comparison flux and error
     comp_flux_raw = in_flux[:, comp_index, :, :]
     comp_flux_err_raw = in_err[:, comp_index, :, :]
     nan_mask = np.logical_or(np.isnan(comp_flux_raw),
@@ -209,7 +227,7 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index, norm_mask):
     '''comp_norm = (np.nanmedian(comp_flux[:, :, norm_mask], 
             axis=2).reshape((comp_flux.shape[0], comp_flux.shape[1], 1)))'''
 
-    #Get differential flux and error
+    #Get differential flux and error, normalised by median OOT region
     diff_flux = obj_flux / comp_flux
     diff_flux_err = diff_flux * np.sqrt((obj_flux_err/obj_flux)**2 +
                 (comp_flux_err/comp_flux)**2)
@@ -239,37 +257,36 @@ if __name__ == "__main__":
 
     '''===== START OF INPUT PARAMETERS ======'''
     
-    aSpecify input-output directory and input photometry file name
-    dir_ = ''
-    infile_ = '*_phot.fits'
+    #Specify input-output directory and file names
+    dir_ = '/scratch/ngts/lr182/SAAO_test_data/NOI_101380_5th_v/photometry'
+    infile_ = 'SAAO_NOI-101380_V_Green_phot.fits'
+    outfile_pdf = infile_.replace(".fits", "_plot.pdf")
 
     #Define target and comparison object numbers (indicies) from field plot
-    o_num = 2           # As integer
-    c_num = [1, 4]      # As list
+    o_num = 1           # As integer
+    c_num = [0, 2]      # As list
 
     #Define normalised flux limits outside which outliers are clipped
     norm_flux_upper = 1.2
     norm_flux_lower = 0
 
-    #Define plot time format to use
-    time = "jd"
+    #Define plot time format to use [JD, HJD, BJD]
+    plot_time_format = "JD"
     
     #Define time to bin up light curve (seconds)
-    b = 10 * 60
+    binning = 10 * 60
    
     #Ingress and egress times [None, value]
-    xjd_oot_l_p = None      # predicted
-    xjd_oot_u_p = None      # predicted
-    xjd_oot_l = None        # actual
-    xjd_oot_u = None        # actual
-
-    #Plot ingress/egress markers [True, False]
-    plot_oot_l_p = True
-    plot_oot_u_p = True
-
-    #Define number of plot panel rows and columns per page
-    ncols = 2
-    nrows = 3
+    global xjd_oot_l_p; xjd_oot_l_p = 2458155.36      # predicted ingress
+    global xjd_oot_u_p; xjd_oot_u_p = 2458155.46      # predicted egress
+    global xjd_oot_l; xjd_oot_l = 2458155.36       # actual ingress
+    global xjd_oot_u; xjd_oot_u = 2458155.46        # actual egress
+    
+    #Define max number of plot panel rows and columns per page and other vars
+    global ncols; ncols = 2
+    global nrows; nrows = 3
+    global figsize; figsize = (12,8)
+    global dpi; dpi = 100
 
     '''===== END OF INPUT PARAMETERS ====='''
 
@@ -282,7 +299,7 @@ if __name__ == "__main__":
         hdr = f[0].read_header()
         flux = f['OBJ_FLUX'][:,:,:,:]
         fluxerr = f['OBJ_FLUX_ERR'][:,:,:,:]
-        fluxflags = f['OBJ_FLUX_FLAGS'][:,:,:,:]
+        #fluxflags = f['OBJ_FLUX_FLAGS'][:,:,:,:]
         obj_bkg_app_flux = f['OBJ_BKG_APP_FLUX'][:,:,:,:]
         bkg_flux = f['RESIDUAL_BKG_FLUX'][:,:,:]
         ccdx = f['OBJ_CCD_X'][:,:]
@@ -290,17 +307,38 @@ if __name__ == "__main__":
         fwhm = f['MEAN_OBJ_FWHM'][:,:]
         jd = f['JD'][:]
         hjd = f['HJD_utc'][:]
-        bjd = f['BJD_bjd'][:]
-        frame_shift_x = f['FRAME_SHIFT_X'][:]
-        frame_shift_y = f['FRAME_SHIFT_Y'][:]
+        bjd = f['BJD_tdb'][:]
+        #frame_shift_x = f['FRAME_SHIFT_X'][:]
+        #frame_shift_y = f['FRAME_SHIFT_Y'][:]
         exp = f['EXPOSURE_TIME'][:]
         airmass = f['AIRMASS'][:]
         apps = f['VARIABLES_APERTURE_RADII'][:]
-        bkgs = f['VARIABLES_BKG_PARAMS'][:]
+        bkgs = np.char.strip(np.asarray(f['VARIABLES_BKG_PARAMS'][:],
+            dtype='S10'))
 
+    #Get key header infiormation
+    global target_name; target_name = hdr['TARGET']
+    global dateobs; dateobs = Time(
+            hdr['DATE-OBS'].strip(),format='isot',scale='utc',out_subfmt='date_hm')
+    global observat; observat = hdr['OBSERVAT'].strip()
+    global telescop; telescop = hdr['TELESCOP'].strip()
+    global instrumt; instrumt = hdr['INSTRUMT'].strip()
+    global observer; observer = hdr['OBSERVER'].strip()
+    global analyser; analyser = hdr['ANALYSER'].strip()
+    global filtera; filtera, _, _ = hdr['FILTERA'].strip().partition(' - ')
+    global filterb; filterb, _, _ = hdr['FILTERB'].strip().partition(' - ')
+
+    #Get base data table for FITS output
+    base_table = Table([jd, hjd, bjd, flux[0,o_num,0,:], fluxerr[0,o_num,0,:], 
+        obj_bkg_app_flux[0,o_num,0,:], ccdx[o_num, :], ccdy[o_num, :], 
+        fwhm[0,:], exp, airmass], 
+        names=('JD_UTC', 'HJD_UTC', 'BJD_TDB', 'RELATIVE_FLUX', 'FLUX_ERROR',
+            'BACKGROUND_FLUX', 'CCD_X', 'CCD_Y', 'SEEING_ARCSECONDS',
+            'EXPOSURE_TIME_SECONDS', 'AIRMASS'))
+    
     #Get preffered plot time format
-    if time == "hjd": xjd = hjd
-    elif time == "bjd": xjd = bjd
+    if plot_time_format == "HJD": xjd = hjd
+    elif plot_time_format == "BJD": xjd = bjd
     else: xjd = jd
     
     #Get xjd offset time 
@@ -316,23 +354,26 @@ if __name__ == "__main__":
         norm_mask = np.ones(xjd.shape[0], dtype=bool)
 
     #Identify blocks of frames with different exposure times
-    uniq, ind, inv = np.unique(exp, return_index=True, return_inverse=True)
-    block_exposure_times = uniq[inv]
-    block_index_boundaries = ind[inv]
-    block_index_boundaries.append(flux.shape[3])
-    
+    block_ind_bound = np.array([0])
+    block_ind_bound = np.append(block_ind_bound, np.where(exp[:-1] != exp[1:])[0] +1)
+    block_exp_t = exp[block_ind_bound]
+    block_ind_bound = np.append(block_ind_bound, exp.shape[0]).tolist()
+
     #Find background subtraction parameters with lowest residuals
     print ("Bkg subtraction residual flux for each parameter combination "\
         "summed across frames:")
-    print np.sum(bkg_flux, axis=(0,2)
+    print np.nansum(bkg_flux, axis=(0,2))
     lowest_bkg = np.where(np.nansum(bkg_flux, axis=(0,2)) == np.nanmin(
         np.nansum(bkg_flux, axis=(0,2))))[0][0]
-  
-    #Initialise plot
+ 
+    #Initialise first page of output pdf
+    global npp; npp = 0
+    global figs; figs = []
+    global n_plot_tot; n_plot_tot = 6 + 2*len(c_num)
+    global n_plotted; n_plotted = 0
 
-
-    '''MEAN COMPARISON'''
-    #Perform differential photometry using mean comparison star
+    '''TARGET VS MEAN/ENSAMBLE COMPARISON'''
+    #Perform differential photometry using comparison ensamble
     diff_flux, diff_flux_err, obj_flux, comp_flux = differential_photometry(flux, 
                                                 fluxerr, o_num, c_num, norm_mask)
 
@@ -343,97 +384,87 @@ if __name__ == "__main__":
     sn_max_bkg = (np.where(signal/noise == np.nanmax((signal/noise)[:,lowest_bkg])))
     sn_max_a, sn_max_b = get_sn_max(sn_max)
     sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
-
+    
     #Print signal to noise
-    print ("Max S/N overall is {:.2f} using aperture "\
-            "rad {:.1f} pix and bkg params {}".format(np.nanmax((signal/noise)[:,:]),
+    print ("Max S/N overall: {:.2f}; aperture "\
+            "rad: {:.1f} pix; bkg params: {}".format(np.nanmax((signal/noise)[:,:]),
             apps[sn_max_a], bkgs[sn_max_b]))
-    print ("Max S/N with lowest bkg residuals is "\
-            "{:.2f} using aperture rad {:.1f} pix and bkg params {}".format(
-        np.nanmax((signal/noise)[:,lowest_bkg]),apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
-   
-    #Make plots using mean of all comparison stars
-    make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-            diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, block_exposure_times,
-            block_index_boundaries, comp_name="comparison_mean", binning=b, 
-            norm_flux_lower=norm_flux_lower, norm_flux_upper=norm_flux_upper,
-            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
-    print "Mean plot finished."
+    print ("Max S/N with lowest bkg residuals: "\
+            "{:.2f}; aperture rad: {:.1f} pix; bkg params: {}".format(
+                np.nanmax((signal/noise)[:,lowest_bkg]),
+                apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
+    #Bin data
+    finite_mask = np.isfinite(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :])
+    flux_bin = bin_to_size(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :], binning, 
+            block_exp_t, block_ind_bound, finite_mask)
+    xjd_bin = bin_to_size(xjd, binning, block_exp_t, block_ind_bound,
+            finite_mask)
+    fwhm_bin = bin_to_size(fwhm[sn_max_bkg_b,:], binning, block_exp_t, block_ind_bound,
+            finite_mask)
+    norm_mask_bin = bin_to_size(norm_mask, binning, block_exp_t, block_ind_bound,
+            finite_mask)
 
-    '''TARGET BY ITSELF'''
-    #Calculate signal to noise (from oot region if specified)
-    signal = np.nanmean(flux[:,o_num,:,:][:,:,norm_mask], axis=2)
-    noise = np.nanstd(flux[:,o_num,:,:][:,:,norm_mask], axis=2, ddof=1)
-    sn_max_bkg = (np.where(signal/noise == np.nanmax((signal/noise)[:,lowest_bkg])))
-    sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
-    print ("Max S/N with lowest bkg residuals is "\
-            "{:.2f} using aperture rad {:.1f} pix and bkg params {}".format(
-        np.nanmax((signal/noise)[:,lowest_bkg]),apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
+    #Plot differential photometry using comparison ensamble
+    add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b],
+        'Rel. flux (ensamble)', xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
+        plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
+        ylim=[norm_flux_lower, norm_flux_upper], alpha=0.5, inc=False)
+    #Binned
+    add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+        plot_rms=True, rms_mask=norm_mask_bin, ylim=[norm_flux_lower,
+            norm_flux_upper], c='r', inc=True, hold=True)
+    
+    ''''PLOT SYSTEMATIC INDICATORS'''
+    add_plot(xjd, obj_bkg_app_flux[sn_max_bkg_a,o_num,sn_max_bkg_b,:],
+            ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format, inc=True)
+    add_plot(xjd, ccdx[o_num,:], ylabel='CCD_X', xoffset=xjd_off,
+            xlabel=plot_time_format, inc=True)
+    add_plot(xjd, fwhm[sn_max_bkg_b,:], xoffset=xjd_off, xlabel=plot_time_format,
+            inc=False)
+    add_plot(xjd_bin, fwhm_bin, 
+            ylabel='FWHM (arcsec)', xoffset=xjd_off, xlabel=plot_time_format,
+            inc=True, hold=True, c='r')
+    add_plot(xjd, ccdy[o_num,:], ylabel='CCD_Y', xoffset=xjd_off,
+            xlabel=plot_time_format, inc=True)
+    add_plot(xjd, airmass, ylabel='Airmass', xoffset=xjd_off,
+            xlabel=plot_time_format, inc=True)
+    
 
-    #Get normalised flux of target by itself
-    flux_target_solo = flux[:,o_num,:,:][sn_max_bkg_a,:,:][sn_max_bkg_b,:]
-    flux_target_solo_err = fluxerr[:,o_num,:,:][sn_max_bkg_a,:,:][sn_max_bkg_b,:]
-    flux_target_solo_err /= np.nanmedian(flux_target_solo[norm_mask])
-    flux_target_solo /= np.nanmedian(flux_target_solo[norm_mask])
-    
-    #Plot flux of target star by itself
-    make_lc_plots(flux_target_solo, flux_target_solo_err, xjd, name, 
-            block_exposure_times, block_index_boundaries, 
-            comp_name="target_by_itself", binning=b, 
-            xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
-    print "Plot of target by itself is finished."
-    
-    '''COMPARISONS BY THEMSELVES'''
     #Work through the individual comparison stars
     for cindex in c_num:
         
-        #Calculate signal to noise (from oot region if specified)
-        signal = np.nanmean(flux[:,cindex,:,:][:,:,norm_mask], axis=2)
-        noise = np.nanstd(flux[:,cindex,:,:][:,:,norm_mask], axis=2, ddof=1)
-        #sn_max = (np.where(signal/noise == np.nanmax(signal/noise)))
-        #sn_max_a, sn_max_b = get_sn_max(sn_max)
-        sn_max_bkg = (np.where(signal/noise == np.nanmax((signal/noise)[:,lowest_bkg])))
-        sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
-        print ("Max S/N with lowest bkg residuals is "\
-            "{:.2f} using aperture rad {:.1f} pix and bkg params {}".format(
-        np.nanmax((signal/noise)[:,lowest_bkg]),apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
-
-        #Get normalised flux of comparison by itself
-        flux_comp_solo = flux[:,cindex,:,:][sn_max_bkg_a,:,:][sn_max_bkg_b,:]
-        flux_comp_solo_err = fluxerr[:,cindex,:,:][sn_max_bkg_a,:,:][sn_max_bkg_b,:]
-        flux_comp_solo_err /= np.nanmedian(flux_comp_solo[norm_mask])
-        flux_comp_solo /= np.nanmedian(flux_comp_solo[norm_mask])
-        
-        #Plot flux of comparison star by itself
-        make_lc_plots(flux_comp_solo, flux_comp_solo_err, xjd, name, 
-                block_exposure_times,
-                block_index_boundaries, comp_name="comparison_"+str(cindex)+"_by_itself", 
-                binning=b, xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
-        print "Plot of comp star %i by itself is finished." % cindex
-
         '''TARGET VS INDIVIDUAL COMPARISONS'''
         #Get differential flux of object with comparison star
-        diff_flux, diff_flux_err, obj_flux, comp_flux = differential_photometry(flux, 
-                                            fluxerr, o_num, [cindex], norm_mask)
+        diff_flux, diff_flux_err, obj_flux, comp_flux = differential_photometry(
+                flux, fluxerr, o_num, [cindex], norm_mask)
         signal = np.nanmean(diff_flux[:,:,norm_mask], axis=2)
         noise = np.nanstd(diff_flux[:,:,norm_mask], axis=2, ddof=1)
         sn_max = np.where(signal/noise == np.nanmax(signal/noise))
         sn_max_a, sn_max_b = get_sn_max(sn_max)
-        sn_max_bkg = (np.where(signal/noise == np.nanmax((signal/noise)[:,lowest_bkg])))
+        sn_max_bkg = (np.where(signal/noise == np.nanmax(
+            (signal/noise)[:,lowest_bkg])))
         sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
-        print ("Max S/N with lowest bkg residuals is "\
-            "{:.2f} using aperture rad {:.1f} pix and bkg params {}".format(
-        np.nanmax((signal/noise)[:,lowest_bkg]),apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
-
-        #Plot differential flux of object with comparison star
-        make_lc_plots(diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-                diff_flux_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
-                block_exposure_times,block_index_boundaries, 
-                comp_name="comparison_"+str(cindex), binning=b, 
-                norm_flux_lower=norm_flux_lower,
-                norm_flux_upper=norm_flux_upper,
-                xjd_oot_l=xjd_oot_l,xjd_oot_u=xjd_oot_u)
-        print "Comparison plot for comp star %i is finished." % cindex
+    
+        #Bin data
+        finite_mask = np.isfinite(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :])
+        flux_bin = bin_to_size(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :], binning, 
+                block_exp_t, block_ind_bound, finite_mask)
+        xjd_bin = bin_to_size(xjd, binning, block_exp_t, block_ind_bound,
+                finite_mask)
+        norm_mask_bin = bin_to_size(norm_mask, binning, block_exp_t, block_ind_bound,
+                finite_mask)
+    
+        #Plot differential photometry using individual comparisons
+        add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b],
+            'Rel. flux (comp. %d)' %cindex, xoffset=xjd_off,
+            xlabel=plot_time_format, plot_oot_l_p=True,
+            plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
+            ylim=[norm_flux_lower, norm_flux_upper], alpha=0.5, inc=False)
+        #Binned
+        add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+            plot_rms=True, rms_mask=norm_mask_bin, ylim=[norm_flux_lower,
+                norm_flux_upper], c='r', inc=True, hold=True)
+        
         
         '''EACH COMPARISON VS MEAN OF OTHER COMPARISONS'''
         #Get diff flux of comparison with mean of other comparisons
@@ -442,25 +473,37 @@ if __name__ == "__main__":
             other_comps = np.asarray(c_num)[comp_mask]
             (diff_flux_other, diff_flux_other_err, obj_flux_other,
                 comp_flux_other) = differential_photometry(
-                                flux, fluxerr, cindex, other_comps, norm_mask)
+                                flux, fluxerr, cindex, other_comps)
             
             #Get signal to noise (from oot region if specified)
-            signal = np.nanmean(diff_flux_other[:,:,norm_mask], axis=2) 
-            noise = np.nanstd(diff_flux_other[:,:,norm_mask], axis=2, ddof=1)  
+            signal = np.nanmean(diff_flux_other[:,:,:], axis=2) 
+            noise = np.nanstd(diff_flux_other[:,:,:], axis=2, ddof=1)  
             sn_max_bkg = (np.where(signal/noise == 
                                         np.nanmax((signal/noise)[:,lowest_bkg])))
             sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
-            print ("Max S/N with lowest bkg residuals is "\
-            "{:.2f} using aperture rad {:.1f} pix and bkg params {}".format(
-            np.nanmax((signal/noise)[:,lowest_bkg]),apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
-
-            #Plot differential flux
-            make_lc_plots(diff_flux_other[sn_max_bkg_a,sn_max_bkg_b],
-                    diff_flux_other_err[sn_max_bkg_a,sn_max_bkg_b], xjd, name, 
-                    block_exposure_times, block_index_boundaries, 
-                comp_name="comparison_"+str(cindex)+"_vs_other_comps", 
-                binning=b, norm_flux_lower=norm_flux_lower,
-                norm_flux_upper=norm_flux_upper,
-                xjd_oot_l=xjd_oot_l, xjd_oot_u=xjd_oot_u)
-            print ("Comparison plot of comp star %i vs mean of other comparisons"\
-                     " is finished." % cindex)
+            
+            #Bin data
+            finite_mask = np.isfinite(diff_flux_other[sn_max_bkg_a, sn_max_bkg_b, :])
+            flux_bin = bin_to_size(diff_flux_other[sn_max_bkg_a, sn_max_bkg_b, :], 
+                    binning, block_exp_t, block_ind_bound, finite_mask)
+            xjd_bin = bin_to_size(xjd, binning, block_exp_t, block_ind_bound,
+                    finite_mask)
+            #norm_mask_bin = bin_to_size(
+            #        norm_mask, binning, block_exp_t, block_ind_bound,finite_mask)
+        
+            #Plot differential photometry using individual comparisons
+            add_plot(xjd, diff_flux_other[sn_max_bkg_a,sn_max_bkg_b],
+                'Resid. (comp. %d)' %cindex, xoffset=xjd_off, 
+                xlabel=plot_time_format, plot_oot_l_p=True, plot_oot_u_p=True,
+                plot_rms=True, ylim=[norm_flux_lower, norm_flux_upper], 
+                alpha=0.5, inc=False)
+            #Binned
+            add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+                plot_rms=True, ylim=[norm_flux_lower,
+                    norm_flux_upper], c='r', inc=True, hold=True)
+    
+    #Save figures to output pdf
+    with PdfPages(join(dir_, outfile_pdf)) as pdf:
+        for fig in figs:
+            plt.figure(fig.number)
+            pdf.savefig()
