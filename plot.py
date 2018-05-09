@@ -250,20 +250,6 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
 
     return diff_flux, diff_flux_err, obj_flux, comp_flux 
 
-class Logger(object):
-    def __init__(self, _dir, name):
-        self._dir = _dir
-        self.terminal = sys.stdout
-        self.log = open(join(self._dir, name), "w")
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-
-    def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        pass
-
 
 if __name__ == "__main__":
 
@@ -305,15 +291,11 @@ if __name__ == "__main__":
     '''===== END OF INPUT PARAMETERS ====='''
 
     
-    #Initialise instance of Logger which saves screen prints to .log file 
-    sys.stdout = Logger(dir_, outfile_log) 
-    
     #Load data from photometry file
     with FITS(glob(join(dir_, infile_))[0]) as f:
         hdr = copy(f[0].read_header())
         flux = f['OBJ_FLUX'][:,:,:,:]
         fluxerr = f['OBJ_FLUX_ERR'][:,:,:,:]
-        #fluxflags = f['OBJ_FLUX_FLAGS'][:,:,:,:]
         obj_bkg_app_flux = f['OBJ_BKG_APP_FLUX'][:,:,:,:]
         bkg_flux = f['RESIDUAL_BKG_FLUX'][:,:,:]
         ccdx = f['OBJ_CCD_X'][:,:]
@@ -322,8 +304,6 @@ if __name__ == "__main__":
         jd = f['JD'][:]
         hjd = f['HJD_utc'][:]
         bjd = f['BJD_tdb'][:]
-        #frame_shift_x = f['FRAME_SHIFT_X'][:]
-        #frame_shift_y = f['FRAME_SHIFT_Y'][:]
         exp = f['EXPOSURE_TIME'][:]
         airmass = f['AIRMASS'][:]
         apps = f['VARIABLES_APERTURE_RADII'][:]
