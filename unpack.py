@@ -5,19 +5,7 @@ from astropy import coordinates as coord, units as u
 from astropy.io import fits
 from copy import copy
 from glob import glob
-
-class Mapper(): 
-    def __init__(self, hdr, p, keylist): 
-        for key in keylist: 
-            try: 
-                setattr(self, key.lower(), hdr[getattr(p, key)]) 
-            except: 
-                setattr(self, key.lower(), getattr(p, key)) 
-            try: 
-                setattr(self, key.lower()+'_com', 
-                        hdr.get_comment(getattr(p,key))) 
-            except: 
-                pass 
+from phot import Mapper # SAFPhot script
 
 def get_airmass(jd, ra, dec, loc):
     

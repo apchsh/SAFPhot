@@ -1,12 +1,9 @@
-###############################################################################
-# ======== PHOTOMETRY SCRIPT FOR SAAO DATA BASED ON THE SEP LIBRARY ========= #
-###############################################################################
-
 import sys
 import fitsio
 import sep
 import numpy as np
 import matplotlib.pyplot as plt 
+
 from astropy.table import Table
 from astropy import coordinates as coord
 from os.path import join, exists

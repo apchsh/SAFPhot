@@ -34,30 +34,25 @@ def fold(jd, period, epoch):
 
 
 #Load LC 1 data
-dir_1 = "../NG1416-2518_51655_z_prime_second_half_reduced/reduction/"
-file_1 = "NG1416-2518_51655_obj_14_comparison_mean.fits"
+dir_1 = ""
+file_1 = ""
 band_1 = "V"
 t1 = Table.read(join(dir_1, file_1))
 jd_1 = np.array(t1['JD'])
 flux_1 = np.array(t1['Relative flux'])
 
 #Load LC 2 data
-dir_2 = "../NG1416-2518_51655_v_reduced/reduction/"
-file_2 = "NG1416-2518_51655_obj_12_comparison_mean.fits"
+dir_2 = ""
+file_2 = ""
 band_2 = "z'"
 t2 = Table.read(join(dir_2, file_2))
 jd_2 = np.array(t2['JD'])
 flux_2 = np.array(t2['Relative flux'])
 
 #System parameters
-obj_id = "NG1416-2518_51655"
-period = 2.47736
+obj_id = "NOI_XXX"
+period = 1.234
 epoch = 2457393.939572
-
-#Remove offset from jd if plotting jd on x-axis
-#off = np.floor(np.min(jd_1))
-#jd_1 -= off
-#jd_2 -= off
 
 #Fold LCs
 ph_1 = fold(jd_1, period, epoch)
@@ -65,11 +60,16 @@ ph_2 = fold(jd_2, period, epoch)
 ph_1[ph_1 > 0.8] -=  1.0
 ph_2[ph_2 > 0.8] -=  1.0
 
+#Remove offset from jd if plotting jd on x-axis
+off = np.floor(np.min(jd_1))
+jd_1 -= off
+jd_2 -= off
+
 #Line up curves with phase offset
 ph_2 += 0.0
 
 # Binning
-b = 15*60 #sec
+b = 10*60 #sec
 
 #Plot
 plt.figure(1, figsize=(8,6), dpi=100)

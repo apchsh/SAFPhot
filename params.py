@@ -1,4 +1,4 @@
-from validate import Validator
+from validate import Validator # SAFPhot script
 
 def get_params():
 

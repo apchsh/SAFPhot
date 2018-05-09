@@ -1,4 +1,5 @@
 # Script to change headers if information has been entered wrong accidentally
+
 import sys
 from astropy.io import fits
 from copy import copy

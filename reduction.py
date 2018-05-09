@@ -1,6 +1,5 @@
 import numpy as np
-import sys; 
-#sys.path.append("/home/a/apc34/")
+import sys 
 import fitsio
 
 from astropy.io import fits

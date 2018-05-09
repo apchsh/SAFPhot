@@ -19,11 +19,11 @@ Optional:
 '''
 
 import argparse
-import photsort as ps
-import reduction as red
-import unpack as up
-import phot as ph
-import params
+import photsort as ps   #SAFPhot script
+import reduction as red #SAFPhot script
+import unpack as up     #SAFPhot script
+import phot as ph       #SAFPhot script
+import params           #SAFPhot script
 
 from os.path import join
 from os import walk

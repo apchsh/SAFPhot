@@ -20,7 +20,7 @@ from fitsio import FITS
 from glob import glob
 from matplotlib.backends.backend_pdf import PdfPages
 from copy import copy
-from scipy.stats import pearsonr
+#from scipy.stats import pearsonr
 
 warnings.simplefilter('ignore')
 
