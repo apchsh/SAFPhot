@@ -19,6 +19,7 @@ from astropy.time import Time
 from fitsio import FITS
 from glob import glob
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import pearsonr
 
 warnings.simplefilter('ignore')
 
@@ -104,8 +105,7 @@ def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
     
     #Check whether new plot page is required
     if (npp == 0) and (hold is False):
-        plt.cla()
-        
+
         #Initialise variables
         used_axes = []
         
@@ -147,7 +147,7 @@ def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
     cond_1 = (xlabel is not None) and (npp >= (nrows*ncols)-ncols)
     cond_2 = (xlabel is not None) and (n_plot_tot-n_plotted <= ncols)
     if any([cond_1, cond_2]) :
-        axf[npp].tick_params(axis='x', labelbottom=True)
+        plt.setp(axf[npp].get_xticklabels(), visible=True)
         axf[npp].set_xlabel(xlabel + " (-%d)" %xoffset)
     if ylabel is not None:
         axf[npp].set_ylabel(ylabel)
@@ -406,8 +406,8 @@ if __name__ == "__main__":
 
     #Plot differential photometry using comparison ensamble
     add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b],
-        'Rel. flux (ensamble)', xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
-        plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
+        'Rel. flux (ensamble)', xoffset=xjd_off, xlabel=plot_time_format,
+        plot_oot_l_p=True, plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
         ylim=[norm_flux_lower, norm_flux_upper], alpha=0.5, inc=False)
     #Binned
     add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
@@ -415,21 +415,28 @@ if __name__ == "__main__":
             norm_flux_upper], c='r', inc=True, hold=True)
     
     ''''PLOT SYSTEMATIC INDICATORS'''
-    add_plot(xjd, obj_bkg_app_flux[sn_max_bkg_a,o_num,sn_max_bkg_b,:],
+    '''
+    corr_store = []
+    for i in range(diff_flux[sn_max_bkg_a,sn_max_bkg_b, :].shape[0]):
+        yy =pearsonr(np.roll(obj_bkg_app_flux[sn_max_bkg_a,o_num,sn_max_bkg_b],
+            i), diff_flux[sn_max_bkg_a,sn_max_bkg_b])[0]
+        corr_store.append(yy)
+    add_plot(xjd, np.asarray(corr_store),
+            ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format, inc=True)
+    ''' 
+    add_plot(xjd, obj_bkg_app_flux[sn_max_bkg_a,o_num,sn_max_bkg_b], 
             ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format, inc=True)
     add_plot(xjd, ccdx[o_num,:], ylabel='CCD_X', xoffset=xjd_off,
             xlabel=plot_time_format, inc=True)
-    add_plot(xjd, fwhm[sn_max_bkg_b,:], xoffset=xjd_off, xlabel=plot_time_format,
-            inc=False)
-    add_plot(xjd_bin, fwhm_bin, 
-            ylabel='FWHM (arcsec)', xoffset=xjd_off, xlabel=plot_time_format,
-            inc=True, hold=True, c='r')
+    add_plot(xjd, fwhm[sn_max_bkg_b,:], xoffset=xjd_off,
+            xlabel=plot_time_format, inc=False)
+    add_plot(xjd_bin, fwhm_bin, ylabel='FWHM (arcsec)', xoffset=xjd_off,
+            xlabel=plot_time_format, inc=True, hold=True, c='r')
     add_plot(xjd, ccdy[o_num,:], ylabel='CCD_Y', xoffset=xjd_off,
             xlabel=plot_time_format, inc=True)
     add_plot(xjd, airmass, ylabel='Airmass', xoffset=xjd_off,
             xlabel=plot_time_format, inc=True)
     
-
     #Work through the individual comparison stars
     for cindex in c_num:
         
@@ -464,7 +471,6 @@ if __name__ == "__main__":
         add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
             plot_rms=True, rms_mask=norm_mask_bin, ylim=[norm_flux_lower,
                 norm_flux_upper], c='r', inc=True, hold=True)
-        
         
         '''EACH COMPARISON VS MEAN OF OTHER COMPARISONS'''
         #Get diff flux of comparison with mean of other comparisons
@@ -501,9 +507,10 @@ if __name__ == "__main__":
             add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
                 plot_rms=True, ylim=[norm_flux_lower,
                     norm_flux_upper], c='r', inc=True, hold=True)
-    
+
     #Save figures to output pdf
     with PdfPages(join(dir_, outfile_pdf)) as pdf:
         for fig in figs:
             plt.figure(fig.number)
+            #plt.show()
             pdf.savefig()
