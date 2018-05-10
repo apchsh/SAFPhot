@@ -16,7 +16,7 @@ import sys
 import argparse
 import params # SAFPhot script
 
-from os.path import join
+from os.path import join, dirname
 from astropy.table import Table
 from astropy.time import Time
 from fitsio import FITS
@@ -24,6 +24,7 @@ from glob import glob
 from matplotlib.backends.backend_pdf import PdfPages
 from copy import copy
 from matplotlib.image import imread
+from shutil import copyfile
 #from scipy.stats import pearsonr
 
 warnings.simplefilter('ignore')
@@ -602,4 +603,7 @@ if __name__ == "__main__":
             #plt.show()
             pdf.savefig()
             
+    #Copy params script to dir_
+    copyfile(join(dirname(__file__), 'params.py'), join(dir_, 'params.py'))
+
     print "Plotting complete"
