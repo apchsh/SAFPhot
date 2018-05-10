@@ -54,7 +54,8 @@ class fits_sort():
         if verbose: print "%i files found." % len(files)
  
         # Prepare validator object
-        fitsval = ValidateFits(params) 
+        fitsval = ValidateFits(params)
+        skip_count = 0 
 
         for file_ in files:
 
@@ -94,9 +95,13 @@ class fits_sort():
                 #CLOSE THE FILE
                 f.close()
 
-            else:
-
-                print "File %s is invalid." % file_
+            else: skip_count += 1 
+                
+        if skip_count > 0: 
+            print "%i files skipped, which were either invalid or in the \
+                specified calibration, reduction or photometry directories." \
+                % skip_count
+        
 
         if verbose: print "Files sorted." 
 
