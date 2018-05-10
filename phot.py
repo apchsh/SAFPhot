@@ -182,6 +182,11 @@ def run_phot(dir_, pattern, p, name):
 
     '''END OF DEFINITIONS'''
 
+    #Check if the photometry file exists and if so skip
+    if exists(output_name): 
+        print "%s already exists so skipping." % output_name
+        return None 
+
     #Try creating directory to hold photometry files
     if not exists(out_dir): makedirs(out_dir)
 

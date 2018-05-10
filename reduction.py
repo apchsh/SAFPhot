@@ -33,20 +33,7 @@ def stack_fits(flat_list):
 
     return np.concatenate(stack, axis=0) 
 
-
-def reduce_sci(files, bias, flat, verbose=False):
-    '''Function with which to reduce the science images'''
-
-    bias = fitsio.read(biasl)
-    flat = fitsio.read(flatl) 
-
-    for file_ in files:
-        f = fits.open(file_)
-        f[0].data = (f[0].data - bias)/flat
-        f.writeto(file_.replace('SH', 'rSH')) 
-        if verbose: print file_ + " done." 
-
-def create_calframes(files, verbose=False):
+def create_calframes(files, params, verbose=False):
     '''Main function creating calibration frames'''
 
     print "Creating calibration frames for data." 
@@ -55,27 +42,27 @@ def create_calframes(files, verbose=False):
     calframes = {}
 
     #Try creating directory to hold calibration files
-    outdir = join(files.dir_, "calframes/") 
+    outdir = join(params.out_dir, params.cal_dir) 
     if not exists(outdir): makedirs(outdir)
 
     #if verbose: print "Default output dir is %s" % outdir
 
-    #MAKE MASTER BIAS
-    bias_frames = stack_fits(files.bias)
-    bias_mean = np.mean(bias_frames, axis=0)
-    fitsio.write(join(outdir, "bias.fits"), bias_mean)
+    bias_ = join(outdir, "bias.fits") #bias file name 
 
-    #print bias_frames.shape
-    print bias_mean.shape
+    if exists(bias_):
+        print "Master bias already exists, skipping creation."
+        calframes["bias"] = fitsio.read(bias_)
+    else:
+        #MAKE MASTER BIAS
+        bias_frames = stack_fits(files.bias)
+        calframes["bias"] = np.mean(bias_frames, axis=0)
+        
+        fitsio.write(join(outdir, "bias.fits"), calframes["bias"])
+        del bias_frames
+        
 
-    if verbose: print "Bias calibration frame saved to %s (%i exposures)." % (join(outdir,
-    "bias.fits"), bias_frames.shape[0] )  
-
-    #delete the bias_frames variable to free up space in case
-    del bias_frames
-    calframes["bias"] = bias_mean
-
-    
+    if verbose: print "Bias calibration frame is %s." % bias_  
+   
     #MAKE MASTER FLATS
     #prepare arrays for indexing 
     flts = set(files.flat_filter)
@@ -86,18 +73,23 @@ def create_calframes(files, verbose=False):
     for flt in flts:
     
         #output directory
-        flat_out = join(outdir, "flat_%s.fits" % flt).replace(' ', '_')
+        flat_ = join(outdir, "flat_%s.fits" % flt).replace(' ', '_')
 
-        #create normalised master_flat
-        flat_stack = stack_fits(flat_list[filter_list == flt])
-        master_flat = np.mean(flat_stack, axis=0) - bias_mean 
-        master_flat /= np.median(master_flat)
+        if exists(flat_):
+            print "Flat %s already exists, skipping creation." % flt
+            calframes[flt] = fitsio.read(flat_)
 
-        fitsio.write(flat_out, master_flat)
-        calframes[flt] = master_flat
+        else: 
+            
+            #create normalised master_flat
+            flat_stack = stack_fits(flat_list[filter_list == flt])
+            master_flat = np.mean(flat_stack, axis=0) - calframes["bias"]
+            master_flat /= np.median(master_flat)
 
-        if verbose: print "Normalised flat calibration frame saved to %s \
-                (%i exposures)" % (flat_out, flat_stack.shape[0])
+            fitsio.write(flat_, master_flat)
+            calframes[flt] = master_flat
+
+        if verbose: print "Flat calibration frame is %s" % flat_
 
     return calframes
 

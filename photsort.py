@@ -58,7 +58,7 @@ class fits_sort():
 
         for file_ in files:
 
-            # CHECK FILE EXISTS AND IS VALID
+            # CHECK FILE EXISTS, HAS VALID HEADER AND ISN'T IN OUTPUT DIR
             if fitsval.check(file_):
 
                 # OPEN FILES
