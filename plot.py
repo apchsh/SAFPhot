@@ -235,24 +235,20 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
     #Get comparison flux and error
     comp_flux_raw = in_flux[:, comp_index, :, :]
     comp_flux_err_raw = in_err[:, comp_index, :, :]
+    weights = 1.0/comp_flux_err_raw**2
     nan_mask = np.logical_or(np.isnan(comp_flux_raw),
             np.isnan(comp_flux_err_raw))
     comp_flux = np.ma.masked_array(comp_flux_raw, mask=nan_mask)
     comp_flux_err = np.ma.masked_array(comp_flux_err_raw, mask=nan_mask)
-    comp_flux = np.ma.average(comp_flux, weights=1/(comp_flux_err**2), axis=1)
-    '''
-    numerator = np.ma.sum(comp_flux/(comp_flux_err**2), axis=1)
-    denominator = np.ma.sum(1/(comp_flux_err**2), axis=1)
-    comp_flux = numerator / denominator
-    '''
-    comp_flux_err = np.sqrt(1/np.sum(1/(comp_flux_err**2), axis=1))
+    comp_flux = np.ma.average(comp_flux, weights=weights, axis=1)
+    comp_flux_err = np.sqrt(1.0/np.sum(1.0/(comp_flux_err**2.0), axis=1))
     '''comp_norm = (np.nanmedian(comp_flux[:, :, norm_mask], 
             axis=2).reshape((comp_flux.shape[0], comp_flux.shape[1], 1)))'''
 
     #Get differential flux and error, normalised by median OOT region
     diff_flux = obj_flux / comp_flux
-    diff_flux_err = diff_flux * np.sqrt((obj_flux_err/obj_flux)**2 +
-                (comp_flux_err/comp_flux)**2)
+    diff_flux_err = diff_flux * np.sqrt((obj_flux_err/obj_flux)**2.0 +
+                (comp_flux_err/comp_flux)**2.0)
     diff_norm = (np.nanmedian(diff_flux[:, :, norm_mask], 
             axis=2).reshape((diff_flux.shape[0], diff_flux.shape[1], 1)))
     diff_flux /= diff_norm

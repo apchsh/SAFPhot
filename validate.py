@@ -94,7 +94,7 @@ class Validator(object):
                 "FIELD_ANGLE":float_positive,
                 "RADII":list_float,
                 "BOX_SIZE":list_int,
-                "FILTER_SIZE":list_float,
+                "FILTER_SIZE":list_int,
                 "SOURCE_THRESH":float_or_int_positive,
                 "BKG_APP_RAD":float_or_int_positive,
                 "NUM_BKG_APPS":float_or_int_positive,
