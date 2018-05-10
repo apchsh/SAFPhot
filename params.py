@@ -5,11 +5,11 @@ def get_params():
     #create the parameter dictionary
     params = {}
 
-    #OBSERVING KEYWORDS
+    #TELESCOPE/OBSERVING PARAMETERS
     params["PLATESCALE"] = 0.167 # platescale [arcsec/pix]
     params["FIELD_ANGLE"] = 180.0 # rotate the example field image by [deg]
     
-    #PHOTOMETRY KEYWORDS 
+    #PHOTOMETRY PARAMETERS 
     params["RADII"] = [3.0, 3.1] # Aperture radii to use
     params["BOX_SIZE"] = [16, 32] # Background estimation box size
     params["FILTER_SIZE"] = [3.0] # Background estimation filter length (boxes)
@@ -53,7 +53,7 @@ def get_params():
     params["LON"] = 0.334 # longitude of telescope in Earth geodetic co-ords
     params["ALT"] = 300.0 # Altitude of telescope [meters]
 
-    #OUTPUT KEYWORDS 
+    #REDUCTION AND PHOTOMETRY OUTPUT KEYWORDS 
     params["OUT_DIR"] = "" # output directory, if blank the input dir is used 
     params["RED_DIR"] = "reduction/" # sub-directory of output folder in which to store 
                                     # reduced files
@@ -64,6 +64,24 @@ def get_params():
     params["BIASID"] = "BIAS" # keyword to id BIAS frames 
     params["FLATID"] = "FLAT" # keyword to id FLAT frames
 
+    #PLOT PARAMETERS
+    params["TARGET_OBJECT_NUM"] = 1         # target number from field image [int]
+    params["COMPARISON_OBJECT_NUMS"] = [0, 2] # comparison numbers [int,int,..]
+    params["NORM_FLUX_UPPER"] = 1.2   # normalised flux upper filter limit
+    params["NORM_FLUX_LOWER"] = 0     # normalised flux lower filter limit
+    params["PLOT_TIME_FORMAT"] = "JD"       # time format for plotting [JD,HJD,BJD]
+    params["BINNING"] = 10*60               # bin time for flightcurves [seconds]
+    params["PREDICTED_INGRESS"] = 2458155.36 # in format of "PLOT_TIME_FORMAT"
+    params["PREDICTED_EGRESS"] = 2458155.46 # in format of "PLOT_TIME_FORMAT"
+    params["ACTUAL_INGRESS"] = 2458155.36   # in format of "PLOT_TIME_FORMAT"
+    params["ACTUAL_EGRESS"] = 2458155.46    # in format of "PLOT_TIME_FORMAT"
+    params["NCOLS"] = 2                     # max number of plot columns per page [int]
+    params["NROWS"] = 3                     # max number of plot rows per page [int]
+    params["FIGSIZE"] = (12,8)              # figure size in inches (width,height)/DPI
+    params["DPI"] = 100                     # resolution in dots per inch [int]
+    params["PHOT_FILE_IN"] = "*_phot.fits"  # photometry input file
+    params["FIELD_IMAGE_IN"] = "*_field.png"    # field image input file
+    
     return Validator(params) 
 
 if __name__ == "__main__":

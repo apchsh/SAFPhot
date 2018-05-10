@@ -21,6 +21,13 @@ class KeyValueError(Exception):
     pass 
 
 #Functions to validate the keywords 
+def tuple_two(num):
+    
+    if type(num) == tuple:
+        if len(num) == 2:
+            return True
+        else: return False
+
 def float_positive(num):
     
     if type(num) == float:
@@ -80,46 +87,63 @@ def string_or_int(value):
 class Validator(): 
        
 
-    keylist = {"PLATESCALE":float_positive,
-               "FIELD_ANGLE":float_positive,
-               "RADII":list_float,
-               "BOX_SIZE":list_int,
-               "FILTER_SIZE":list_float,
-               "SOURCE_THRESH":float_or_int_positive,
-               "BKG_APP_RAD":float_or_int_positive,
-               "NUM_BKG_APPS":float_or_int_positive,
-               "DATEOBS":check_string, 
-               "OBSERVER":check_string,
-               "OBSERVATORY":check_string,
-               "TELESCOPE":check_string,
-               "INSTRUMENT":check_string,
-               "FILTERA":check_string,
-               "FILTERB":check_string,
-               "TARGET":check_string,
-               "EXPOSURE":check_string,
-               "RA":string_or_float,
-               "DEC":string_or_float,
-               "EPOCH":check_string,
-               "EQUINOX":check_string,
-               "VBIN":string_or_int,
-               "HBIN":string_or_int,
-               "PREAMP":string_or_float,
-               "AIRMASS":check_string, 
-               "JD":check_string,
-               "HJD":check_string,
-               "BJD":check_string,
-               "LAT":string_or_float,
-               "LON":string_or_float,
-               "ALT":string_or_float,
-               "ANALYSER":check_string,
-               "OUT_DIR":check_string,
-               "RED_DIR":check_string,
-               "PHOT_DIR":check_string,
-               "PHOT_PREFIX":check_string,
-               "RED_PREFIX":check_string,
-               "BIASID":check_string,
-               "FLATID":check_string,
-               "OBSTYPE":check_string}
+    keylist = { "PLATESCALE":float_positive,
+                "FIELD_ANGLE":float_positive,
+                "RADII":list_float,
+                "BOX_SIZE":list_int,
+                "FILTER_SIZE":list_float,
+                "SOURCE_THRESH":float_or_int_positive,
+                "BKG_APP_RAD":float_or_int_positive,
+                "NUM_BKG_APPS":float_or_int_positive,
+                "DATEOBS":check_string, 
+                "OBSERVER":check_string,
+                "OBSERVATORY":check_string,
+                "TELESCOPE":check_string,
+                "INSTRUMENT":check_string,
+                "FILTERA":check_string,
+                "FILTERB":check_string,
+                "TARGET":check_string,
+                "EXPOSURE":check_string,
+                "RA":string_or_float,
+                "DEC":string_or_float,
+                "EPOCH":check_string,
+                "EQUINOX":check_string,
+                "VBIN":string_or_int,
+                "HBIN":string_or_int,
+                "PREAMP":string_or_float,
+                "AIRMASS":check_string, 
+                "JD":check_string,
+                "HJD":check_string,
+                "BJD":check_string,
+                "LAT":string_or_float,
+                "LON":string_or_float,
+                "ALT":string_or_float,
+                "ANALYSER":check_string,
+                "OUT_DIR":check_string,
+                "RED_DIR":check_string,
+                "PHOT_DIR":check_string,
+                "PHOT_PREFIX":check_string,
+                "RED_PREFIX":check_string,
+                "BIASID":check_string,
+                "FLATID":check_string,
+                "OBSTYPE":check_string,
+                "TARGET_OBJECT_NUM":int_positive,
+                "COMPARISON_OBJECT_NUMS":list_int,
+                "NORM_FLUX_UPPER":float_or_int_positive,
+                "NORM_FLUX_LOWER":float_or_int_positive,
+                "PLOT_TIME_FORMAT":check_string,
+                "BINNING":int_positive,
+                "PREDICTED_INGRESS":float_positive,
+                "PREDICTED_EGRESS":float_positive,
+                "ACTUAL_INGRESS":float_positive,
+                "ACTUAL_EGRESS":float_positive,
+                "NCOLS":int_positive,
+                "NROWS":int_positive,
+                "FIGSIZE":tuple_two,
+                "DPI":int_positive,
+                "PHOT_FILE_IN":check_string,
+                "FIELD_IMAGE_IN":check_string
+               }
 
     def __init__(self, pardict): 
 
