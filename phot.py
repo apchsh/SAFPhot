@@ -14,7 +14,7 @@ from donuts import Donuts
 from time import time as time_
 from scipy import ndimage
 from copy import copy
-from unpack import convert_jd_hjd, convert_jd_bjd # SAFPhot script
+from unpack import convert_jd_hjd, convert_jd_bjd, Mapper # SAFPhot script
 from photsort import get_all_files # SAFPhot script
 
 def makeheader(m):
@@ -152,20 +152,7 @@ def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle):
             first_sub, x_ref, y_ref, angle)
     
     return x_ref, y_ref
-
-class Mapper():
-    def __init__(self, hdr, p, keylist):
-        for key in keylist:
-            try:
-                setattr(self, key.lower(), hdr[getattr(p, key)])
-            except:
-                setattr(self, key.lower(), getattr(p, key))
-            try:
-                setattr(self, key.lower()+'_com',
-                        hdr.get_comment(getattr(p,key)))
-            except:
-                pass
-                
+               
 def run_phot(dir_, pattern, p, name):
 
     #Define background box sizes to use

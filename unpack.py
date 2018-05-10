@@ -5,7 +5,20 @@ from astropy import coordinates as coord, units as u
 from astropy.io import fits
 from copy import copy
 from glob import glob
-from phot import Mapper # SAFPhot script
+
+class Mapper():
+    def __init__(self, hdr, p, keylist):
+        for key in keylist:
+            try:
+                setattr(self, key.lower(), hdr[getattr(p, key)])
+            except:
+                setattr(self, key.lower(), getattr(p, key))
+            try:
+                setattr(self, key.lower()+'_com',
+                        hdr.get_comment(getattr(p,key)))
+            except:
+                pass
+ 
 
 def get_airmass(jd, ra, dec, loc):
     
@@ -129,9 +142,9 @@ def unpack_reduce(files, calframes, params, verbose=True):
             temp_header['AIRMASS'] = get_airmass(newtime.jd, m.ra, m.dec, loc)
             
             #Write HDU as its own FITS
-            fname = basename(file_).replace('.fits', '.%04d.fits' % count)
+            fname = basename(file_).replace('.fits', '.%04d.fits' % (count+1))
             hdu = fits.PrimaryHDU(red_data, header=temp_header)
-            hdu.writeto(join(outdir, fname), overwrite=True)
+            hdu.writeto(join(outdir, fname), clobber=True)
         f.close()
 
     print "Reduction and unpacking complete." 

@@ -11,6 +11,10 @@ can be set. Once the create method has been run over the
 
 '''
 
+import fitsio 
+
+from os.path import isfile 
+
 class KeyNotKnownError(Exception):
     pass
 
@@ -84,10 +88,9 @@ def string_or_int(value):
         return True
     else: return False
 
-class Validator(): 
+class Validator(object): 
        
-
-    keylist = { "PLATESCALE":float_positive,
+    _keylist = { "PLATESCALE":float_positive,
                 "FIELD_ANGLE":float_positive,
                 "RADII":list_float,
                 "BOX_SIZE":list_int,
@@ -148,13 +151,13 @@ class Validator():
     def __init__(self, pardict): 
 
         set_pardict = set(pardict)
-        set_keylist = set(self.keylist)
+        set_keylist = set(self._keylist)
  
         if set_pardict == set_keylist: 
 
             for key in pardict: 
 
-                if self.keylist[key](pardict[key]):
+                if self._keylist[key](pardict[key]):
 
                     setattr(self, key.lower(), pardict[key])
 
@@ -171,4 +174,46 @@ class Validator():
             else:
                 raise KeyMissingError("The following keys are required: %s" % 
                         ', '.join(set_keylist - set_pardict))
+
+
+class ValidateFits(object):
+
+    params = [] #replaced by Validator object
+
+    mandatoryKeys = [
+            "EXPOSURE"         
+            ]
+
+    def __init__(self, par):
+
+        if type(par).__name__ == "Validator":
+                self.params = par
+
+        else: 
+            raise ValueError("Invalid parameter object passed.")
+
+
+    def check(self, file_):
+
+        valid = True
+
+        if isfile(file_):
+
+            with fitsio.FITS(file_) as f: 
+
+                header = f[0].read_header() 
+                fitsKeys = header.keys() 
+    
+                for key in self.mandatoryKeys:
+                    
+                    paramName = self.params.__getattribute__(key.lower())
+
+                    if not(paramName in fitsKeys): valid = False
+
+        else:
+
+            raise ValueError("Fits file %s does not exist." % file_) 
+
+        return valid 
+
 

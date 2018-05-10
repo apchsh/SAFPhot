@@ -4,6 +4,7 @@ from astropy.io import fits
 from fnmatch import fnmatch
 from os import path, walk
 from glob import glob
+from validate import ValidateFits
 
 class InputDirError(Exception):
     pass
@@ -52,42 +53,50 @@ class fits_sort():
 
         if verbose: print "%i files found." % len(files)
  
+        # Prepare validator object
+        fitsval = ValidateFits(params) 
+
         for file_ in files:
 
             # CHECK FILE EXISTS AND IS VALID
+            if fitsval.check(file_):
 
-            # OPEN FILES
-            f = fits.open(file_) 
-            fobstype = f[0].header[params.obstype]
-            fobject = f[0].header[params.target]
-            if not(params.filtera == ''):
-                filtera = f[0].header[params.filtera]
-            if not(params.filterb == ''):
-                filterb = f[0].header[params.filterb]
-        
-            # CLEAN FILTERS
-            filtera, _, _ = filtera.strip().strip('\n').partition(' - ')
-            if 'Empty' in filtera: filtera = ''
-            filterb, _, _ = filterb.strip().strip('\n').partition(' - ')
-            if 'Empty' in filterb: filterb = ''
-            filter_ = filtera + filterb 
-            if filter_ == '': filter_ = 'WHITE'
+                # OPEN FILES
+                f = fits.open(file_) 
+                fobstype = f[0].header[params.obstype]
+                fobject = f[0].header[params.target]
+                if not(params.filtera == ''):
+                    filtera = f[0].header[params.filtera]
+                if not(params.filterb == ''):
+                    filterb = f[0].header[params.filterb]
+            
+                # CLEAN FILTERS
+                filtera, _, _ = filtera.strip().strip('\n').partition(' - ')
+                if 'Empty' in filtera: filtera = ''
+                filterb, _, _ = filterb.strip().strip('\n').partition(' - ')
+                if 'Empty' in filterb: filterb = ''
+                filter_ = filtera + filterb 
+                if filter_ == '': filter_ = 'WHITE'
 
-            # SPLIT FILES INTO OBJECTS
-            if params.biasid in fobstype.upper() or params.biasid in fobject.upper():
-                self.bias.append(file_) 
-            elif params.flatid in fobstype.upper() or params.flatid in fobject.upper():
-                self.flat.append(file_)
-                self.flat_filter.append(filter_) 
+                # SPLIT FILES INTO OBJECTS
+                if params.biasid in fobstype.upper() or params.biasid in fobject.upper():
+                    self.bias.append(file_) 
+                elif params.flatid in fobstype.upper() or params.flatid in fobject.upper():
+                    self.flat.append(file_)
+                    self.flat_filter.append(filter_) 
+                else:
+                    self.target.append(file_)
+                    self.target_filter.append(filter_)
+                    self.target_name.append((fobject + " (%s)") % filter_)
+                    self.target_ra.append(f[0].header[params.ra])
+                    self.target_dec.append(f[0].header[params.dec])
+
+                #CLOSE THE FILE
+                f.close()
+
             else:
-                self.target.append(file_)
-                self.target_filter.append(filter_)
-                self.target_name.append((fobject + " (%s)") % filter_)
-                self.target_ra.append(f[0].header[params.ra])
-                self.target_dec.append(f[0].header[params.dec])
 
-            #CLOSE THE FILE
-            f.close()
+                print "File %s is invalid." % file_
 
         if verbose: print "Files sorted." 
 
