@@ -309,9 +309,9 @@ if __name__ == "__main__":
     o_num = p.target_object_num           # As integer
     c_num = p.comparison_object_nums      # As list
 
-    #Define normalised flux limits outside which outliers are clipped
-    norm_flux_upper = p.norm_flux_upper
-    norm_flux_lower = p.norm_flux_lower
+    #Define normalised flux and time axis limits for plotting
+    norm_flux_limits = p.norm_flux_limits
+    time_axis_limits = p.time_axis_limits
 
     #Define plot time format to use [JD, HJD, BJD]
     plot_time_format = p.plot_time_format
@@ -460,7 +460,7 @@ if __name__ == "__main__":
     add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
         'Rel. flux (ensamble)', xoffset=xjd_off, xlabel=plot_time_format,
         plot_oot_l_p=True, plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
-        ylim=[norm_flux_lower, norm_flux_upper], alpha=0.5, inc=False)
+        xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
     
     #Bin data
     finite_mask = np.isfinite(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :])
@@ -475,8 +475,8 @@ if __name__ == "__main__":
 
     #plot Binned differential photometry using comparison ensamble
     add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
-        plot_rms=True, rms_mask=norm_mask_bin, ylim=[norm_flux_lower,
-        norm_flux_upper], c='r', inc=True, hold=True)
+        plot_rms=True, rms_mask=norm_mask_bin, xlim=time_axis_limits,
+        ylim=norm_flux_limits, c='r', inc=True, hold=True)
     
     #Save data to FITS file
     params_to_update = {
@@ -500,17 +500,18 @@ if __name__ == "__main__":
             ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format, inc=True)
     ''' 
     add_plot(xjd, obj_bkg_app_flux[sn_max_bkg_a,o_num,sn_max_bkg_b,:], 
-            ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format, inc=True)
+            ylabel='Background flux', xoffset=xjd_off, xlabel=plot_time_format,
+            xlim=time_axis_limits, inc=True)
     add_plot(xjd, ccdx[o_num,:], ylabel='CCD_X', xoffset=xjd_off,
-            xlabel=plot_time_format, inc=True)
+            xlabel=plot_time_format, xlim=time_axis_limits, inc=True)
     add_plot(xjd, fwhm[sn_max_bkg_b,:], xoffset=xjd_off,
-            xlabel=plot_time_format, inc=False)
+            xlabel=plot_time_format, xlim=time_axis_limits, inc=False)
     add_plot(xjd_bin, fwhm_bin, ylabel='FWHM (arcsec)', xoffset=xjd_off,
-            xlabel=plot_time_format, inc=True, hold=True, c='r')
+            xlabel=plot_time_format, xlim=time_axis_limits, inc=True, hold=True, c='r')
     add_plot(xjd, ccdy[o_num,:], ylabel='CCD_Y', xoffset=xjd_off,
-            xlabel=plot_time_format, inc=True)
+            xlabel=plot_time_format, xlim=time_axis_limits, inc=True)
     add_plot(xjd, airmass, ylabel='Airmass', xoffset=xjd_off,
-            xlabel=plot_time_format, inc=True)
+            xlabel=plot_time_format, xlim=time_axis_limits, inc=True)
     
 
     #Work through the individual comparison stars
@@ -533,7 +534,7 @@ if __name__ == "__main__":
             'Rel. flux (comp. %d)' %cindex, xoffset=xjd_off,
             xlabel=plot_time_format, plot_oot_l_p=True,
             plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
-            ylim=[norm_flux_lower, norm_flux_upper], alpha=0.5, inc=False)
+            xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
         
         #Bin data
         finite_mask = np.isfinite(diff_flux[sn_max_bkg_a, sn_max_bkg_b, :])
@@ -545,8 +546,8 @@ if __name__ == "__main__":
                 finite_mask)
         #Plot binned photometry using individual comparisons
         add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
-            plot_rms=True, rms_mask=norm_mask_bin, ylim=[norm_flux_lower,
-                norm_flux_upper], c='r', inc=True, hold=True)
+            plot_rms=True, rms_mask=norm_mask_bin, xlim=time_axis_limits, 
+            ylim=norm_flux_limits, c='r', inc=True, hold=True)
         
         #Save data to FITS file
         params_to_update = {
@@ -580,7 +581,7 @@ if __name__ == "__main__":
             add_plot(xjd, diff_flux_other[sn_max_bkg_a,sn_max_bkg_b,:],
                 'Resid. (comp. %d)' %cindex, xoffset=xjd_off, 
                 xlabel=plot_time_format, plot_oot_l_p=True, plot_oot_u_p=True,
-                plot_rms=True, ylim=[norm_flux_lower, norm_flux_upper], 
+                plot_rms=True, xlim=time_axis_limits, ylim=norm_flux_limits, 
                 alpha=0.5, inc=False)
             
             #Bin data
@@ -592,8 +593,8 @@ if __name__ == "__main__":
             
             #Plot differential photometry of comparison vs comparison residuals
             add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
-                plot_rms=True, ylim=[norm_flux_lower,
-                    norm_flux_upper], c='r', inc=True, hold=True)
+                plot_rms=True, xlim=time_axis_limits, ylim=norm_flux_limits,
+                c='r', inc=True, hold=True)
     
     #Load field image and save as figure
     plot_field_image(dir_, field_file, o_num, c_num)

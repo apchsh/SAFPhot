@@ -62,6 +62,15 @@ def list_int(list_):
         
     return result 
 
+def list_float_or_none(list_):
+    
+    result = True
+    for item in list_:
+        if not(type(item) == float) and not(item == None):
+            result = False
+
+    return result
+
 def list_float(list_):
     
     result = True
@@ -132,8 +141,8 @@ class Validator(object):
                 "OBSTYPE":check_string,
                 "TARGET_OBJECT_NUM":int_positive,
                 "COMPARISON_OBJECT_NUMS":list_int,
-                "NORM_FLUX_UPPER":float_or_int_positive,
-                "NORM_FLUX_LOWER":float_or_int_positive,
+                "NORM_FLUX_LIMITS":list_float_or_none,
+                "TIME_AXIS_LIMITS":list_float_or_none,
                 "PLOT_TIME_FORMAT":check_string,
                 "BINNING":int_positive,
                 "PREDICTED_INGRESS":float_positive,
