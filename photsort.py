@@ -66,9 +66,9 @@ class fits_sort():
                 filterb = f[0].header[params.filterb]
         
             # CLEAN FILTERS
-            filtera = filtera.strip().strip('\n')
+            filtera, _, _ = filtera.strip().strip('\n').partition(' - ')
             if 'Empty' in filtera: filtera = ''
-            filterb = filterb.strip().strip('\n') 
+            filterb, _, _ = filterb.strip().strip('\n').partition(' - ')
             if 'Empty' in filterb: filterb = ''
             filter_ = filtera + filterb 
             if filter_ == '': filter_ = 'WHITE'
