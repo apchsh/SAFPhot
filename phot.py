@@ -356,11 +356,11 @@ def run_phot(dir_, pattern, p, name):
                 '''Extract objects at minimal detection threshold to properly
                 mask stars for bkg residual measurement'''
                 objects_bkg, segmap_bkg = sep.extract(data_sub, thresh=1.0, 
-                        err=bkg.globalrms, segmentation_map=True)
+                        err=bkg.rms(), segmentation_map=True)
 
                 #Measure background flux residuals
                 bflux, bfluxerr, bflag = sep.sum_circle(data_sub, bapp_x, bapp_y,
-                            bkg_rad, err=bkg.globalrms, mask=segmap_bkg,
+                            bkg_rad, err=bkg.rms(), mask=segmap_bkg,
                             gain=m.preamp)
                 
                 #Store background flux residuals
@@ -409,11 +409,11 @@ def run_phot(dir_, pattern, p, name):
                 
                 #Measure number of counts in target aperture
                 flux, fluxerr, flag = sep.sum_circle(data_sub, x_rad, y_rad,
-                    rad, err=bkg.globalrms, gain=m.preamp)
+                    rad, err=bkg.rms(), gain=m.preamp)
                 
                 #Measure num counts subtracted as bkg in same aperture
                 bflux_app, bfluxerr_app, bflag_app = sep.sum_circle(
-                        bkg.back(), x_rad, y_rad, rad, err=bkg.globalrms,
+                        bkg.back(), x_rad, y_rad, rad, err=bkg.rms(),
                         gain=m.preamp)
 
                 #Store flux, flux err and flags for target apertures

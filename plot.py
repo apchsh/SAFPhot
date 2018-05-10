@@ -239,7 +239,12 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
             np.isnan(comp_flux_err_raw))
     comp_flux = np.ma.masked_array(comp_flux_raw, mask=nan_mask)
     comp_flux_err = np.ma.masked_array(comp_flux_err_raw, mask=nan_mask)
-    comp_flux = np.average(comp_flux, weights=1/(comp_flux_err**2), axis=1)
+    comp_flux = np.ma.average(comp_flux, weights=1/(comp_flux_err**2), axis=1)
+    '''
+    numerator = np.ma.sum(comp_flux/(comp_flux_err**2), axis=1)
+    denominator = np.ma.sum(1/(comp_flux_err**2), axis=1)
+    comp_flux = numerator / denominator
+    '''
     comp_flux_err = np.sqrt(1/np.sum(1/(comp_flux_err**2), axis=1))
     '''comp_norm = (np.nanmedian(comp_flux[:, :, norm_mask], 
             axis=2).reshape((comp_flux.shape[0], comp_flux.shape[1], 1)))'''
@@ -255,7 +260,7 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
 
     return diff_flux, diff_flux_err, obj_flux, comp_flux 
     
-def plot_field_image(dir_, field_file):
+def plot_field_image(dir_, field_file, o_num, c_num):
     field_image = plt.imread(join(dir_,field_file))[:,:,:]
     fig = plt.figure(figsize=figsize, dpi=dpi)
     dmean = np.mean(field_image)
@@ -264,7 +269,8 @@ def plot_field_image(dir_, field_file):
         cmap=plt.get_cmap('gray'))
     plt.axis('off')
     fig.suptitle(target_name+', '+observat+' '
-            +telescop+', '+filtera+', '+str(dateobs))
+            +telescop+', '+filtera+', '+str(dateobs) + '\n\ntarget: %d;  '
+            %o_num +'comparisons: %s' %[x for x in c_num])
     figs.append(fig)
 
 
@@ -594,7 +600,7 @@ if __name__ == "__main__":
                     norm_flux_upper], c='r', inc=True, hold=True)
     
     #Load field image and save as figure
-    plot_field_image(dir_, field_file)
+    plot_field_image(dir_, field_file, o_num, c_num)
 
     #Save figures to output pdf
     with PdfPages(join(dir_, outfile_pdf)) as pdf:
