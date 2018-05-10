@@ -1,3 +1,4 @@
+import numpy as np
 from validate import Validator # SAFPhot script
 
 def get_params():
@@ -10,9 +11,9 @@ def get_params():
     params["FIELD_ANGLE"] = 180.0 # rotate the example field image by [deg]
     
     #PHOTOMETRY PARAMETERS 
-    params["RADII"] = [3.0, 3.1] # Aperture radii to use
-    params["BOX_SIZE"] = [16, 32] # Background estimation box size
-    params["FILTER_SIZE"] = [3.0] # Background estimation filter length (boxes)
+    params["RADII"] = (np.arange(20, 60, 1)/10.0).tolist()  # Aperture radii to use
+    params["BOX_SIZE"] = [16, 32, 64] # Background estimation box size
+    params["FILTER_SIZE"] = [0, 1, 2, 3, 4] # Background estimation filter length (boxes)
     params["SOURCE_THRESH"] = 7.0 # Source detection threshold
     params["BKG_APP_RAD"] = 4.0 # Aperture radius to measure background residuals
     params["NUM_BKG_APPS"] = 100 # Num apertures per frame to measure bkg residuals
@@ -67,9 +68,9 @@ def get_params():
 
     #PLOT PARAMETERS
     params["TARGET_OBJECT_NUM"] = 1         # target number from field image [int]
-    params["COMPARISON_OBJECT_NUMS"] = [0, 2] # comparison numbers [int,int,..]
-    params["NORM_FLUX_UPPER"] = 1.2   # normalised flux upper filter limit
-    params["NORM_FLUX_LOWER"] = 0     # normalised flux lower filter limit
+    params["COMPARISON_OBJECT_NUMS"] = [0, 2] # comparison numbers as list [int,int,..]
+    params["NORM_FLUX_LIMITS"] = [None, None] # normalised flux limits as list [lower,upper]
+    params["TIME_AXIS_LIMITS"] = [None, None] # time axis limits as list [lower,upper]
     params["PLOT_TIME_FORMAT"] = "JD"       # time format for plotting [JD,HJD,BJD]
     params["BINNING"] = 10*60               # bin time for flightcurves [seconds]
     params["PREDICTED_INGRESS"] = 2458155.36 # in format of "PLOT_TIME_FORMAT"
@@ -78,7 +79,7 @@ def get_params():
     params["ACTUAL_EGRESS"] = 2458155.46    # in format of "PLOT_TIME_FORMAT"
     params["NCOLS"] = 2                     # max number of plot columns per page [int]
     params["NROWS"] = 3                     # max number of plot rows per page [int]
-    params["FIGSIZE"] = (12,8)              # figure size in inches (width,height)/DPI
+    params["FIGSIZE"] = (12,8)              # figure size in inches as tuple: (width,height)
     params["DPI"] = 100                     # resolution in dots per inch [int]
     params["PHOT_FILE_IN"] = "*_phot.fits"  # photometry input file
     params["FIELD_IMAGE_IN"] = "*_field.png"    # field image input file
