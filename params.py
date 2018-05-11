@@ -13,7 +13,7 @@ def get_params():
     #PHOTOMETRY PARAMETERS 
     params["RADII"] = (np.arange(20, 60, 1)/10.0).tolist()  # Aperture radii to use
     params["SUBPIX"] = 10 # Subpixel sampling factor
-    params["RMAX"] = 10.0 # maximum pixel radius to analyse half width of flux
+    params["RMAX"] = 10.0 # maximum pixel radius to analyse FWHM
     params["BOX_SIZE"] = [16, 32, 64] # Background estimation box size
     params["FILTER_SIZE"] = [0, 1, 2, 3, 4] # Background estimation filter length (boxes)
     params["SOURCE_THRESH"] = 7.0 # Source detection threshold
