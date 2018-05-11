@@ -235,7 +235,8 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
     #Get comparison flux and error
     comp_flux_raw = in_flux[:, comp_index, :, :]
     comp_flux_err_raw = in_err[:, comp_index, :, :]
-    weights = 1.0/comp_flux_err_raw**2
+    #weights = 1.0/comp_flux_err_raw**2
+    weights = None
     nan_mask = np.logical_or(np.isnan(comp_flux_raw),
             np.isnan(comp_flux_err_raw))
     comp_flux = np.ma.masked_array(comp_flux_raw, mask=nan_mask)

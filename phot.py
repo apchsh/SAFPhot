@@ -123,7 +123,8 @@ def star_loc_plot(name, data, x, y, angle):
     plt.savefig(name, bbox_inches="tight")
     plt.close('all')
 
-def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle):
+def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle, subpix,
+        rmax):
     
     #Get background image  
     bkg = sep.Background(first, bw=bw, bh=bw, fw=fw, fh=fw)
@@ -134,13 +135,14 @@ def build_obj_cat(dir_, prefix, name, first, thresh, bw, fw, angle):
     #Extract sources to use as object catalogue
     objects = sep.extract(first_sub, thresh=thresh, err=bkg.globalrms)
 
-    #Get the half-width radius 
-    fwhm_ref, flags = sep.flux_radius(first_sub, objects['x'],
-            objects['y'], np.ones(len(objects['x']))*10.0, 0.5, subpix=10)
+    #Get the half-width radius (hwhm) 
+    hwhm_ref, flags = sep.flux_radius(first_sub, objects['x'],
+            objects['y'], rmax=np.ones(len(objects['x']))*rmax, frac=0.5,
+            subpix=subpix)
    
     #Update the object centroid positions using sep winpos algorithm
     x_ref, y_ref, f_ref = sep.winpos(first_sub, objects['x'], 
-            objects['y'], fwhm_ref*0.424, subpix=10)
+            objects['y'], 2.0*hwhm_ref*0.4246, subpix=subpix)
     '''
     #Or alternatively just use Donuts positions without winpos refinement
     x_ref = objects['x']
@@ -170,7 +172,13 @@ def run_phot(dir_, pattern, p, name):
 
     #Define source detection threshold
     thresh = p.source_thresh
-   
+  
+    #Define subpixel sampling factor for flux measurements
+    subpix = p.subpix
+
+    #Define maximum radius to analyse half width radius of object flux
+    rmax = p.rmax
+
     #Define rotation angle for field image
     field_angle = p.field_angle
 
@@ -208,7 +216,7 @@ def run_phot(dir_, pattern, p, name):
 
     #Get object catalogue x and y positions
     x_ref, y_ref = build_obj_cat(out_dir, p.phot_prefix, name, first, 
-            thresh, 32, 3, field_angle)
+            thresh, 32, 3, field_angle, subpix, rmax)
 
     #Define aperture positions for background flux measurement
     lim_x = first.shape[0]
@@ -371,17 +379,17 @@ def run_phot(dir_, pattern, p, name):
                 x = x_ref - frame_shift_x_store[count-1]
                 y = y_ref - frame_shift_y_store[count-1]
                     
-                #Get object half width radii
-                fwhm, flags = sep.flux_radius(data_sub, x, y,
-                        np.ones(len(x))*10.0, 0.5, subpix=10)
+                #Get object half width radii (hwhm)
+                hwhm, flags = sep.flux_radius(data_sub, x, y,
+                        rmax=np.ones(len(x))*rmax, frac=0.5, subpix=subpix)
 
                 #Store the fwhm result in arcsec, taking mean over all objects
                 fwhm_store[bkg_count, count-1] = (
-                        np.nanmean(fwhm) * binfactor * m.platescale)
+                        2.0 * np.nanmean(hwhm) * binfactor * m.platescale)
                 
                 #Update target aperture positions using winpos algorithm
                 x_pos,y_pos,f = sep.winpos(data_sub, x, y,
-                        fwhm*0.424, subpix=10)
+                        2.0*hwhm*0.4246, subpix=subpix)
                 '''
                 #Or alternatively trust Donuts positions without winpos
                 #refinement

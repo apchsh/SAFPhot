@@ -102,6 +102,8 @@ class Validator(object):
     _keylist = { "PLATESCALE":float_positive,
                 "FIELD_ANGLE":float_positive,
                 "RADII":list_float,
+                "SUBPIX":int_positive,
+                "RMAX":float_positive,
                 "BOX_SIZE":list_int,
                 "FILTER_SIZE":list_int,
                 "SOURCE_THRESH":float_or_int_positive,
