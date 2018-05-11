@@ -62,6 +62,7 @@ def get_params():
                                     # reduced files
     params["PHOT_DIR"] = "photometry/" # sub-directory of input folder in which to store
                                     # photometric files
+    params["CAL_DIR"] = "calframes/" # sub-directory in which to store calibration frames
     params["PHOT_PREFIX"] = "SAAO_" # prefix to attach to the photometric output
     params["RED_PREFIX"] = "CAL_" # prefix to attach to reduction output 
     params["BIASID"] = "BIAS" # keyword to id BIAS frames 

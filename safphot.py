@@ -47,31 +47,34 @@ if __name__ == '__main__':
         pattern = args.pattern
 
     #Load the list of parameters 
-    p = params.get_params()
+    par = params.get_params()
+
+    #Set the output dir if blank
+    if par.out_dir == "": par.out_dir = args.dir_in
 
     if args.mode in ('both', 'reduction'):
 
         #Run the file detection and sorting code
-        files = ps.fits_sort(p, args.dir_in, pattern, verbose=True)
+        files = ps.fits_sort(par, args.dir_in, pattern, verbose=True)
         files.summary_ra_dec()
 
         #Create the calibration master files (returns dict of frames)
-        calframes = red.create_calframes(files, verbose=True)
+        calframes = red.create_calframes(files, par, verbose=True)
 
         #Unpack + reduce the files
-        up.unpack_reduce(files, calframes, p, verbose=True)
+        up.unpack_reduce(files, calframes, par, verbose=True)
 
     if args.mode in ('both', 'photometry'):
  
         #run photometry
-        dir_ = join(args.dir_in, p.red_dir)
+        dir_ = join(args.dir_in, par.red_dir)
         
         for root, dirs, files in walk(dir_):
         
             for item in dirs:
 
                 print "Processing frames for photometry on %s" % item 
-                ph.run_phot(args.dir_in, pattern, p, item)
+                ph.run_phot(args.dir_in, pattern, par, item)
 
     if args.mode not in ('both', 'reduction', 'photometry'):
 

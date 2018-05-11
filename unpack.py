@@ -90,7 +90,7 @@ def convert_jd_bjd(jd, ra, dec, loc):
 def unpack_reduce(files, calframes, params, verbose=True):
 
     #prepare for unpacking process
-    master_outdir = join(files.dir_ , 'reduction') 
+    master_outdir = join(params.out_dir , params.red_dir) 
 
     #Retrieve Earth coords of telescope, use SALT
     loc = coord.EarthLocation.of_site('SALT')
@@ -127,24 +127,34 @@ def unpack_reduce(files, calframes, params, verbose=True):
             cal_gps_time = (frame_time - dt_exp).isot[0]
             prihdr['GPSSTART'] = cal_gps_time
         
+        #Counter to track how many files were skipped
+        count_skip = 0 
+
         #Iterate through individual HDUs of master file
         for count in range(0, f[0].data.shape[0]):
             
-            #Reduce data
-            red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
-            
-            #Create new header
-            temp_header = copy(prihdr)
-            newtime = correct_time(temp_header, count, m)        
-            temp_header['JD'] = newtime.jd
-            temp_header['HJD'] = convert_jd_hjd(newtime.jd, m.ra, m.dec, loc)
-            temp_header['BJD'] = convert_jd_bjd(newtime.jd, m.ra, m.dec, loc)
-            temp_header['AIRMASS'] = get_airmass(newtime.jd, m.ra, m.dec, loc)
-            
-            #Write HDU as its own FITS
             fname = basename(file_).replace('.fits', '.%04d.fits' % (count+1))
-            hdu = fits.PrimaryHDU(red_data, header=temp_header)
-            hdu.writeto(join(outdir, fname), clobber=True)
-        f.close()
+
+            if not exists(join(outdir, fname)): 
+
+                #Reduce data
+                red_data = ( f[0].data[count, :, :] - calframes['bias'] ) / calframes[filt]
+            
+                #Create new header
+                temp_header = copy(prihdr)
+                newtime = correct_time(temp_header, count, m)        
+                temp_header['JD'] = newtime.jd
+                temp_header['HJD'] = convert_jd_hjd(newtime.jd, m.ra, m.dec, loc)
+                temp_header['BJD'] = convert_jd_bjd(newtime.jd, m.ra, m.dec, loc)
+                temp_header['AIRMASS'] = get_airmass(newtime.jd, m.ra, m.dec, loc)
+            
+                #Write HDU as its own FITS
+                hdu = fits.PrimaryHDU(red_data, header=temp_header)
+                hdu.writeto(join(outdir, fname))
+                f.close()
+
+            else: count_skip += 1
+
+        if count_skip > 0: print "%i files skipped because they already exist." % count_skip
 
     print "Reduction and unpacking complete." 

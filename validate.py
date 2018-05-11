@@ -13,7 +13,7 @@ can be set. Once the create method has been run over the
 
 import fitsio 
 
-from os.path import isfile 
+from os.path import isfile, join
 
 class KeyNotKnownError(Exception):
     pass
@@ -135,6 +135,7 @@ class Validator(object):
                 "ANALYSER":check_string,
                 "OUT_DIR":check_string,
                 "RED_DIR":check_string,
+                "CAL_DIR":check_string,
                 "PHOT_DIR":check_string,
                 "PHOT_PREFIX":check_string,
                 "RED_PREFIX":check_string,
@@ -210,6 +211,17 @@ class ValidateFits(object):
 
         if isfile(file_):
 
+            #Check if any of the output directories are in the path 
+            out_dir = self.params.out_dir.strip('/')
+            cal_dir = self.params.cal_dir.strip('/')
+            red_dir = self.params.red_dir.strip('/')
+            phot_dir = self.params.phot_dir.strip('/') 
+
+            if join(out_dir, cal_dir) in file_: valid = False
+            if join(out_dir, red_dir) in file_: valid = False
+            if join(out_dir, phot_dir) in file_: valid = False 
+
+            #Check if the header is valid
             with fitsio.FITS(file_) as f: 
 
                 header = f[0].read_header() 
