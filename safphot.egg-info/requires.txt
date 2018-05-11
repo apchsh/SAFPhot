@@ -1,0 +1,8 @@
+numpy>=1.14.2
+astropy>=2.0.5
+sep>=1.0.0
+fitsio>=0.9.10
+donuts>=0.2.4
+matplotlib>=2.0.0
+scipy>=1.0.0
+scikit-image>=0.13.0
