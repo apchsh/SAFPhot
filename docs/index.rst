@@ -9,7 +9,7 @@ SAFPhot: Photometry for SAAO telescopes
 .. toctree::
    :caption: Table on Contents
  
-The SAFPhot pipeline was designed to enable fast and automatic processing of data taken using the 1.0 and 1.9m telescopes at the South African Astonomical Observatory. SAFPhot is focused on producing high quality photometry with a focus on transit photometry, however it is a general package which can be applied to data taken from any stellar sources. 
+The SAFPhot pipeline was designed to enable fast and automatic processing of data taken using the 1.0 and 1.9m telescopes at the South African Astonomical Observatory. SAFPhot is focused on producing high quality photometry for transit photometry, however it is a general package which can be applied to data taken from any stellar sources. 
 
 Installation
 ============
