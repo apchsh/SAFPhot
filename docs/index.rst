@@ -7,6 +7,7 @@ SAFPhot: Photometry for SAAO telescopes
 ===================================
 
 .. toctree::
+   :tocdepth: 2
    :maxdepth: 3
    :caption: Contents:
  
@@ -18,7 +19,6 @@ Installation
 SAFPhot is available in the Python pacakge index (PyPI) and so can be installed with pip. Navigate to the directory where you would like to install SAFPhot and run the following command: 
 
 .. codeblock::
-   
    pip install safphot 
 
 Pip will automatcially install package dependencies if they are not satisfied.
