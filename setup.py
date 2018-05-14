@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-#from distutils.core import setup
 
 setup(
   name = 'safphot',
   packages=find_packages(exclude=['*.pyc', 'utilities']),
-  version = '0.1.1',
+  version = '0.1.2',
   description = 'Reduction and photometry pipeline for SAAO small telescopes',
   long_description = 'Reduction and photometry pipeline for SAAO small telescopes',
   author = 'Alexander Chaushev, Liam Raynard',
@@ -21,4 +20,5 @@ setup(
        'Development Status :: 3 - Alpha',
        'Programming Language :: Python :: 2.7',
    ],
-)
+  include_package_data=True,
+  )

@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: safphot
-Version: 0.1.1
+Version: 0.1.2
 Summary: Reduction and photometry pipeline for SAAO small telescopes
 Home-page: https://github.com/apchsh/SAFPhot
 Author: Alexander Chaushev, Liam Raynard
