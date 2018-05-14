@@ -3,13 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+:tocdepth: 2 
+
 SAFPhot: Photometry for SAAO telescopes 
 ===================================
 
 .. toctree::
-   :tocdepth: 2
-   :maxdepth: 3
-   :caption: Contents:
+   :capition: Table on Contents
  
 The SAFPhot pipeline was designed to enable fast and automatic processing of data taken using the 1.0 and 1.9m telescopes at the South African Astonomical Observatory. SAFPhot is focused on producing high quality photometry with a focus on transit photometry, however it is a general package which can be applied to data taken from any stellar sources. 
 
