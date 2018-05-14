@@ -22,25 +22,34 @@ SAFPhot is available in the Python pacakge index (PyPI) and so can be installed 
 
    pip install safphot 
 
-Pip will automatically install package dependencies if they are not satisfied. 
+Pip will automatically install package dependencies if they are not satisfied. There should now be a folder called SAFPhot in the directory. This contains all the scripts used to run the pipeline. 
  
 
 Quickstart
 ----------
 
-We have provided a dataset to test the pipeline on RFS at /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v
-Copy the test-set over into the directory you would like to work in and then change to the 
+We have provided a dataset to test the pipeline on RFS at /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v . 
+Copy the files into a local directory. Then switch to the directory where you have SAFPhot installed. You should be able to 
+see the full list of python scripts including "safphot.py". 
 
 .. highlight:: bash
 
-   cp -r /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v /path/my/dir/ 
-   cd /
+   cp -r /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v /path/to/data/dir/ 
+   cd /path/SAFPhot/ 
+
+To run the pipeline on the test set use the following command: 
+
+.. highlight:: bash
+
+   python safphot.py --p SHH* testset/ both 
 
 
-Tutorial
---------
 
 ..
+
+   Tutorial
+   --------
+
    API
    ---
 
