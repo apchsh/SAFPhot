@@ -12,8 +12,12 @@ SAFPhot/reduction.py
 SAFPhot/safphot.py
 SAFPhot/unpack.py
 SAFPhot/validate.py
+docs/Makefile
+docs/conf.py
+docs/index.rst
 safphot.egg-info/PKG-INFO
 safphot.egg-info/SOURCES.txt
 safphot.egg-info/dependency_links.txt
 safphot.egg-info/requires.txt
 safphot.egg-info/top_level.txt
+tests/unittests.py
