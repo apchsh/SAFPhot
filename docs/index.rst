@@ -67,6 +67,8 @@ Quickstart
         photometry - photometry only (on reduced data)
         both - reduction and photometry
 
+
+
    Optional arguments::
         --p   match only files with specified pattern prefix in their name
 
