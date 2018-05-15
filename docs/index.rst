@@ -50,6 +50,7 @@ At present the directory is overly-complicated as we are still under-development
 
 Quickstart
 ==========
+
 1) Copy science image fits files, along with appropriate flat field and bias
 calibration files, into a new directory with appropriate name for the target
 object.
@@ -70,8 +71,7 @@ object.
         --p   match only files with specified pattern prefix in their name
 
 4) To analyse the photometry, view the field PNG image in the photometry sub
-    directory to assertain the object numbers of the taget and comparison stars. Update the     'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 
-    'PLOT PARAMETERS' section of the 'params.py' file. Run::
+    directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
 
     plot.py {path/to/data/photometry/dir/}
 
@@ -82,14 +82,12 @@ We have provided a dataset to test the pipeline, available on RFS at::
     /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v . 
 
 To use the test dataset, first copy the files into a local directory. Then switch to the directory where you have SAFPhot installed. You should be able to see the full list of python scripts including "safphot.py"::
-
    cp -r /rfs/XROA/Shared/SAFPhot_test_data/ /path/to/data/dir/ 
    cd /path/to/SAFPhot/ 
 
 To run the pipeline on the test set use the following command::
 
    python safphot.py --p SHA* path/to/data/dir/ both 
-
 
 Once the pipeline has finished running there will be three new folders in the data directory::
     'calframes/' - contains the master bias and flat field calibration frames
@@ -125,7 +123,7 @@ The pipeline parameters can be changed by modifying the params.py in the install
 
    Troubleshooting
    ---------------
-    for help running SAFPhot, run:  python safphot.py -h
+   for help running SAFPhot, run:  python safphot.py -h
 
 Acknowledgements
 ================
