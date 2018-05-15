@@ -70,7 +70,7 @@ Quickstart
 
 
    Optional arguments::
-        --p   match only files with specified pattern prefix in their name
+        ``--p   match only files with specified pattern prefix in their name``
 
 4. To analyse the photometry, view the field PNG image in the photometry sub
    directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
