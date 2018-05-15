@@ -76,6 +76,7 @@ Quickstart
         plot.py {path/to/data/photometry/dir/}
 
 
+
 Test dataset
 =============
 
@@ -83,6 +84,7 @@ We have provided a dataset to test the pipeline, available on RFS at::
     /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v . 
 
 To use the test dataset, first copy the files into a local directory. Then switch to the directory where you have SAFPhot installed. You should be able to see the full list of python scripts including "safphot.py"::
+
    cp -r /rfs/XROA/Shared/SAFPhot_test_data/ /path/to/data/dir/ 
    cd /path/to/SAFPhot/ 
 
@@ -114,17 +116,13 @@ photometry subdirectory::
 
 The pipeline parameters can be changed by modifying the params.py in the installation directory. A pipeline that fails half-way can be resumed by re-running the pipeline. Any output files that already exist will not be re-created. If new data is added to a lightcurve, the photometry file for the lightcurve needs to the deleted, in order for the new data to be incorporated. SAFPhot can be run on multiple nights of data, for multiple objects, by simply placing all the files in the same directory. 
 
-..
-
-   Tutorial
-   --------
-
-   API
-   ---
-
-   Troubleshooting
-   ---------------
-   for help running SAFPhot, run:  python safphot.py -h
+..   Tutorial
+..   --------
+..   API
+..   ---
+..   Troubleshooting
+..   ---------------
+..   for help running SAFPhot, run:  python safphot.py -h
 
 Acknowledgements
 ================
