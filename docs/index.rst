@@ -44,7 +44,7 @@ We have provided a dataset to test the pipeline on RFS at /rfs/XROA/Shared/SAFPh
 Copy the files into a local directory. Then switch to the directory where you have SAFPhot installed. You should be able to 
 see the full list of python scripts including "safphot.py".::
 
-   cp -r /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v /path/to/data/dir/ 
+   cp -r /rfs/XROA/Shared/SAFPhot_test_data/ /path/to/data/dir/ 
    cd /path/to/SAFPhot/ 
 
 To run the pipeline on the test set use the following command:::
