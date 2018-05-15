@@ -49,10 +49,12 @@ see the full list of python scripts including "safphot.py".::
 
 To run the pipeline on the test set use the following command:::
 
-   python safphot.py --p SHH* testset/ both 
+   python safphot.py --p SHA* path/to/data/dir/ both 
 
 
 Once the pipeline has finished running there will be three new folders in the data directory. "Calframes" contains the master bias and flat field calibration frames, "reduction" contains the individual reduced images and finally "photometry" contains a fits file with the photometric measurements, time values and a host of other useful information. 
+
+The pipeline parameters can be changed by modifying the params.py in the installation directory. A pipeline that fails half-way can be resumed by re-running the pipeline. Any output files that already exist will not be re-created. If new data is added to a lightcurve, the photometry file for the lightcurve needs to the deleted, in order for the new data to be incorporated. SAFPhot can be run on multiple nights of data, for multiple objects, by simply placing all the files in the same directory. 
 
 ..
 
