@@ -421,7 +421,7 @@ if __name__ == "__main__":
 
 
     '''TARGET VS MEAN/ENSAMBLE COMPARISON'''
-    #Perform differential photometry using comparison ensamble
+    #Perform differential photometry using comparison ensemble
     diff_flux, diff_flux_err, obj_flux, comp_flux = differential_photometry(flux, 
                                                 fluxerr, o_num, c_num, norm_mask)
 
@@ -457,9 +457,9 @@ if __name__ == "__main__":
     header_dic['BKGPARAM'] = bkgs[sn_max_bkg_b]
     base_table = write_table_header(base_table, header_dic)
     
-    #Plot differential photometry using comparison ensamble
+    #Plot differential photometry using comparison ensemble
     add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
-        'Rel. flux (ensamble)', xoffset=xjd_off, xlabel=plot_time_format,
+        'Rel. flux (ensemble)', xoffset=xjd_off, xlabel=plot_time_format,
         plot_oot_l_p=True, plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
         xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
     
@@ -474,7 +474,7 @@ if __name__ == "__main__":
     norm_mask_bin = bin_to_size(norm_mask, binning, block_exp_t, block_ind_bound,
             finite_mask)
 
-    #plot Binned differential photometry using comparison ensamble
+    #plot Binned differential photometry using comparison ensemble
     add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
         plot_rms=True, rms_mask=norm_mask_bin, xlim=time_axis_limits,
         ylim=norm_flux_limits, c='r', inc=True, hold=True)
@@ -487,7 +487,7 @@ if __name__ == "__main__":
     updated_table = update_table(base_table, params_to_update)
     updated_table.meta['APPRADUS'] = apps[sn_max_bkg_a]
     updated_table.meta['BKGPARAM'] = bkgs[sn_max_bkg_b]
-    save_data_fits(updated_table, outfile_fits, 'ensamble')
+    save_data_fits(updated_table, outfile_fits, 'ensemble')
 
 
     ''''PLOT SYSTEMATIC INDICATORS'''
