@@ -50,34 +50,36 @@ At present the directory is overly-complicated as we are still under-development
 
 Quickstart
 ==========
-1) Copy science image fits files, along with appropriate flat field and bias
-calibration files, into a new directory with appropriate name for the target
-object.
 
-2) Configure options in 'params.py' file according to preference
+1. Copy science image fits files, along with appropriate flat field and bias
+   calibration files, into a new directory with appropriate name for the target
+   object.
+
+2. Configure options in 'params.py' file according to preference
     
-3) run::
+3. Then run the following command::
         
         python safphot.py {path/to/data/dir/} {mode}
 
-    Available modes include::
+   Available modes include::
 
         reduction - reduction only
         photometry - photometry only (on reduced data)
         both - reduction and photometry
 
-    Optional arguments::
+   Optional arguments::
         --p   match only files with specified pattern prefix in their name
 
-4) To analyse the photometry, view the field PNG image in the photometry sub
-    directory to assertain the object numbers of the taget and comparison stars. Update the     'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 
-    'PLOT PARAMETERS' section of the 'params.py' file. Run::
+4. To analyse the photometry, view the field PNG image in the photometry sub
+   directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
 
-    plot.py {path/to/data/photometry/dir/}
+        plot.py {path/to/data/photometry/dir/}
+
 
 
 Test dataset
 =============
+
 We have provided a dataset to test the pipeline, available on RFS at::
     /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v . 
 
@@ -89,7 +91,6 @@ To use the test dataset, first copy the files into a local directory. Then switc
 To run the pipeline on the test set use the following command::
 
    python safphot.py --p SHA* path/to/data/dir/ both 
-
 
 Once the pipeline has finished running there will be three new folders in the data directory::
     'calframes/' - contains the master bias and flat field calibration frames
@@ -115,17 +116,13 @@ photometry subdirectory::
 
 The pipeline parameters can be changed by modifying the params.py in the installation directory. A pipeline that fails half-way can be resumed by re-running the pipeline. Any output files that already exist will not be re-created. If new data is added to a lightcurve, the photometry file for the lightcurve needs to the deleted, in order for the new data to be incorporated. SAFPhot can be run on multiple nights of data, for multiple objects, by simply placing all the files in the same directory. 
 
-..
-
-   Tutorial
-   --------
-
-   API
-   ---
-
-   Troubleshooting
-   ---------------
-    for help running SAFPhot, run:  python safphot.py -h
+..   Tutorial
+..   --------
+..   API
+..   ---
+..   Troubleshooting
+..   ---------------
+..   for help running SAFPhot, run:  python safphot.py -h
 
 Acknowledgements
 ================
