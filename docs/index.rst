@@ -16,10 +16,26 @@ Installation
 
 SAFPhot is available in the Python pacakge index (PyPI) and so can be installed with pip. Navigate to the directory where you would like to install SAFPhot and run the following command:::
 
-   pip install safphot 
+         sudo pip install -e git+https://github.com/apchsh/SAFPhot.git#egg=safphot
+         
+We recommend you make a new directory for this as pip will install all the package dependencies in there under a directory called source. After running the script there should now be a folder called src/safphot/ in the directory. The directory structure should now be something like this::
 
-Pip will automatically install package dependencies if they are not satisfied. There should now be a folder called SAFPhot in the directory. This contains all the scripts used to run the pipeline. 
- 
+        src/
+           + safphot/
+              - SAFPhot/
+                ++ safphot.py
+                ++ params.py
+                ++ ... 
+              - docs/
+              - tests/
+              - docs/
+              - utilities/
+              - setup.py
+              - ...  
+
+
+The sub-folder SAFPhot contains all the scripts needed to run the pipeline, with safphot.py being the main script and params.py containing all the options. At present the directory is over-complicated as we are still under-development and testing. Future releases of safphot will have a cleaner and simpler installation. 
+
 
 Quickstart
 ==========
@@ -34,6 +50,9 @@ see the full list of python scripts including "safphot.py".::
 To run the pipeline on the test set use the following command:::
 
    python safphot.py --p SHH* testset/ both 
+
+
+Once the pipeline has finished running there will be three new folders in the data directory. "Calframes" contains the master bias and flat field calibration frames, "reduction" contains the individual reduced images and finally "photometry" contains a fits file with the photometric measurements, time values and a host of other useful information. 
 
 ..
 
