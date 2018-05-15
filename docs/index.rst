@@ -51,33 +51,34 @@ At present the directory is overly-complicated as we are still under-development
 Quickstart
 ==========
 
-1) Copy science image fits files, along with appropriate flat field and bias
-calibration files, into a new directory with appropriate name for the target
-object.
+1. Copy science image fits files, along with appropriate flat field and bias
+   calibration files, into a new directory with appropriate name for the target
+   object.
 
-2) Configure options in 'params.py' file according to preference
+2. Configure options in 'params.py' file according to preference
     
-3) run::
+3. Then run the following command::
         
         python safphot.py {path/to/data/dir/} {mode}
 
-    Available modes include::
+   Available modes include::
 
         reduction - reduction only
         photometry - photometry only (on reduced data)
         both - reduction and photometry
 
-    Optional arguments::
+   Optional arguments::
         --p   match only files with specified pattern prefix in their name
 
-4) To analyse the photometry, view the field PNG image in the photometry sub
-    directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
+4. To analyse the photometry, view the field PNG image in the photometry sub
+   directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
 
-    plot.py {path/to/data/photometry/dir/}
+        plot.py {path/to/data/photometry/dir/}
 
 
 Test dataset
 =============
+
 We have provided a dataset to test the pipeline, available on RFS at::
     /rfs/XROA/Shared/SAFPhot_test_data/NOI_101380_5th_v . 
 
