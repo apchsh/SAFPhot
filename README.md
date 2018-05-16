@@ -1,5 +1,4 @@
-# SAFPhot
-SAFPhot: Photometry for SAAO telescopes
+# SAFPhot: Photometry for SAAO telescopes
 
-#Documenation
+The latest documentation can be found here:
 http://safphot.readthedocs.io/en/latest/ 
