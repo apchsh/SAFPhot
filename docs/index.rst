@@ -93,8 +93,8 @@ To run the pipeline on the test set use the following command::
    python safphot.py --p SHA* path/to/data/dir/ both 
 
 Once the pipeline has finished running there will be three new folders in the data directory::
-    'calframes/' - contains the master bias and flat field calibration frames
-    'reduction/' - contains the individual reduced images
+    'calframes/' - contains the master bias and flat field calibration frames, 
+    'reduction/' - contains the individual reduced images, 
     'photometry/' - contains a fits file with the photometric data and a PNG of the
                 first image with objects numbered
 
@@ -106,8 +106,8 @@ After the script has finished running, some new files will appear in the
 photometry subdirectory::
 
     '*_plot.pdf' - a PDF file containing photometric plots and field image
-    '*comp_ensamble.fits' - data file containing differential photometry using
-                        comparison star ensable
+    '*comp_ensemble.fits' - data file containing differential photometry using
+                        comparison star ensemble
     '*comp_X.fits' - data file containing differential photometry using
                         individual star number X
     'params.py' - copy of params.py file at the time the plot.py script was
