@@ -92,10 +92,10 @@ To run the pipeline on the test set use the following command::
 
    python safphot.py --p SHA* path/to/data/dir/ both 
 
-Once the pipeline has finished running there will be three new folders in the data directory:
-1. 'calframes/' - contains the master bias and flat field calibration frames,
-2. 'reduction/' - contains the individual reduced images,
-3. 'photometry/' - contains a fits file with the photometric data and a PNG of the first image with objects numbered
+Once the pipeline has finished running there will be three new folders in the data directory::
+    'calframes/' - contains the master bias and flat field calibration frames, 
+    'reduction/' - contains the individual reduced images, 
+    'photometry/' - contains a fits file with the photometric data and a PNG of the first image with objects numbered.
 
 To analyse the photometry, run::
 
