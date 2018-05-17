@@ -235,10 +235,13 @@ def differential_photometry(i_flux, i_err, obj_index, comp_index,
     #Get comparison flux and error
     comp_flux_raw = in_flux[:, comp_index, :, :]
     comp_flux_err_raw = in_err[:, comp_index, :, :]
-    #weights = 1.0/comp_flux_err_raw**2
-    weights = None
+    weight_vals = np.nanmean(1.0 / (comp_flux_err_raw / comp_flux_raw)**2,
+        axis=-1).reshape((comp_flux_raw.shape[0],
+        comp_flux_raw.shape[1], comp_flux_raw.shape[2], 1))
+    weights = np.concatenate([weight_vals] * comp_flux_raw.shape[-1],
+            axis=-1)
     nan_mask = np.logical_or(np.isnan(comp_flux_raw),
-            np.isnan(comp_flux_err_raw))
+        np.isnan(comp_flux_err_raw))
     comp_flux = np.ma.masked_array(comp_flux_raw, mask=nan_mask)
     comp_flux_err = np.ma.masked_array(comp_flux_err_raw, mask=nan_mask)
     comp_flux = np.ma.average(comp_flux, weights=weights, axis=1)
