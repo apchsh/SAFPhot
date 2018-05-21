@@ -374,7 +374,7 @@ def run_phot(dir_, pattern, p, name):
                 #Measure background flux residuals
                 bflux, bfluxerr, bflag = sep.sum_circle(data_sub, bapp_x, bapp_y,
                             bkg_rad, err=bkg.rms(), mask=segmap_bkg,
-                            gain=m.preamp)
+                            gain=1/m.preamp)
                 
                 #Store background flux residuals
                 bkg_flux_store[:, bkg_count, count-1] = bflux/exp
@@ -422,12 +422,12 @@ def run_phot(dir_, pattern, p, name):
                 
                 #Measure number of counts in target aperture
                 flux, fluxerr, flag = sep.sum_circle(data_sub, x_rad, y_rad,
-                    rad, err=bkg.rms(), gain=m.preamp)
+                    rad, err=bkg.rms(), gain=1/m.preamp)
                 
                 #Measure num counts subtracted as bkg in same aperture
                 bflux_app, bfluxerr_app, bflag_app = sep.sum_circle(
                         bkg.back(), x_rad, y_rad, rad, err=bkg.rms(),
-                        gain=m.preamp)
+                        gain=1/m.preamp)
 
                 #Store flux, flux err and flags for target apertures
                 flux_store[:, :, bkg_count, count-1] = flux/exp
