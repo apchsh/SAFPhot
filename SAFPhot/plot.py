@@ -120,7 +120,7 @@ def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
                 nrows, ncols, figsize=figsize, dpi=dpi, sharex=True)
         axf = ax.flat
         fig.suptitle(target_name+', '+observat+' '
-                +telescop+', '+filtera+', '+str(dateobs))
+                +telescop+', '+filtera+', '+filterb+', '+str(dateobs))
 
     #Copy data
     x = np.copy(x_in) - xoffset

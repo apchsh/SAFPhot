@@ -39,6 +39,17 @@ def float_positive(num):
             return True
         else: return False 
 
+def float_positive_or_none(num):
+    
+    result = True
+    if not(type(num) == float) and not(num == None):
+        result = False
+    elif (num < 0) and not(num == None):
+        result = False
+    else:
+        pass
+    return result 
+
 def float_or_int_positive(num):
     
     if type(num) == float or type(num) == int:
@@ -148,10 +159,10 @@ class Validator(object):
                 "TIME_AXIS_LIMITS":list_float_or_none,
                 "PLOT_TIME_FORMAT":check_string,
                 "BINNING":int_positive,
-                "PREDICTED_INGRESS":float_positive,
-                "PREDICTED_EGRESS":float_positive,
-                "ACTUAL_INGRESS":float_positive,
-                "ACTUAL_EGRESS":float_positive,
+                "PREDICTED_INGRESS":float_positive_or_none,
+                "PREDICTED_EGRESS":float_positive_or_none,
+                "ACTUAL_INGRESS":float_positive_or_none,
+                "ACTUAL_EGRESS":float_positive_or_none,
                 "NCOLS":int_positive,
                 "NROWS":int_positive,
                 "FIGSIZE":tuple_two,
