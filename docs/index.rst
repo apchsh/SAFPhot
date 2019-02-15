@@ -101,6 +101,11 @@ To analyse the photometry, run::
 
     python plot.py path/to/data/photometry/dir/
 
+NOTES
+(1) params.py and validate.py must be present in the same directory as plot.py
+(2) the absolute path to the photometry directory must be used
+
+
 After the script has finished running, some new files will appear in the
 photometry subdirectory::
 
