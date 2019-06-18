@@ -45,13 +45,13 @@ class fits_sort():
 
     def search(self, params, search_dir, pattern, verbose):
 
-        if verbose: print "Searching directory %s" % search_dir
+        if verbose: print("Searching directory %s" % search_dir)
 
         # Find all files
         token = pattern + "*.fits" 
         files =  get_all_files(search_dir, extension=token)
 
-        if verbose: print "%i files found." % len(files)
+        if verbose: print("%i files found." % len(files))
  
         # Prepare validator object
         fitsval = ValidateFits(params)
@@ -98,20 +98,20 @@ class fits_sort():
             else: skip_count += 1 
                 
         if skip_count > 0: 
-            print "%i files skipped, which were either invalid or in the \
+            print("%i files skipped, which were either invalid or in the \
                 specified calibration, reduction or photometry directories." \
-                % skip_count
+                % skip_count)
         
 
-        if verbose: print "Files sorted." 
+        if verbose: print("Files sorted.")
 
     def summary_ra_dec(self):
 
         #Information about targets
-        print "Found %i target files:" % len(self.target_name)
+        print("Found %i target files:" % len(self.target_name))
         temp_targs = np.array(self.target_name, dtype=str)
         for targ, ra, dec in zip(self.target_name, self.target_ra,
                 self.target_dec):
-            print "\t %s, ra: %s, dec %s." % (targ, ra, dec) 
+            print("\t %s, ra: %s, dec %s." % (targ, ra, dec))
 
 

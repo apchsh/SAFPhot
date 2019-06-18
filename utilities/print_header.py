@@ -23,4 +23,4 @@ f = fits.open(file_)
 f_hdr = copy(f[0].header)
 f.close()
 
-print (repr(f_hdr))
+print(repr(f_hdr))

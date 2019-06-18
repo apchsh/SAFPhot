@@ -192,7 +192,7 @@ def run_phot(dir_, pattern, p, name):
 
     #Check if the photometry file exists and if so skip
     if exists(output_name): 
-        print "%s already exists so skipping." % output_name
+        print("%s already exists so skipping." % output_name)
         return None 
 
     #Try creating directory to hold photometry files
@@ -202,7 +202,7 @@ def run_phot(dir_, pattern, p, name):
     file_dir_ = join(dir_, p.red_dir, name, "")
     f_list = get_all_files(file_dir_, extension=pattern+"*.fits")
     assert (len(f_list) > 0), "No photometry files found!"
-    print ("%d frames" %len(f_list))
+    print("%d frames" %len(f_list))
 
     #Load first image
     with fitsio.FITS(f_list[0]) as fi:
@@ -287,14 +287,14 @@ def run_phot(dir_, pattern, p, name):
         border=0, normalise=False,
         subtract_bkg=False)
     
-    print "Starting photometry for %s." % name
+    print("Starting photometry for %s." % name)
 
     #Initialise start time for progress meter 
     meter_width=48
     start_time = time_()
 
     #Iterate through each reduced science image
-    for count, file_  in enumerate(f_list): 
+    for count, file_  in enumerate(f_list, 1): 
                
         #Store frame offset wrt reference image
         if count != 1:
@@ -477,4 +477,4 @@ def run_phot(dir_, pattern, p, name):
         g.write(radii, header=hdr, extname="VARIABLES_APERTURE_RADII")
         g.write(bkg_params, header=header_bkg_params, extname="VARIABLES_BKG_PARAMS")
 
-    print "\nCompleted photometry for %s." % name
+    print("\nCompleted photometry for %s." % name)

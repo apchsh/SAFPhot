@@ -44,8 +44,9 @@ def float_positive_or_none(num):
     result = True
     if not(type(num) == float) and not(num == None):
         result = False
-    elif (num < 0) and not(num == None):
-        result = False
+    elif not(num == None):
+        if num < 0:
+            result = False
     else:
         pass
     return result 

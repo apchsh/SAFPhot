@@ -36,7 +36,7 @@ def stack_fits(flat_list):
 def create_calframes(files, params, verbose=False):
     '''Main function creating calibration frames'''
 
-    print "Creating calibration frames for data." 
+    print("Creating calibration frames for data.")
 
     #Variable for results
     calframes = {}
@@ -50,7 +50,7 @@ def create_calframes(files, params, verbose=False):
     bias_ = join(outdir, "bias.fits") #bias file name 
 
     if exists(bias_):
-        print "Master bias already exists, skipping creation."
+        print("Master bias already exists, skipping creation.")
         calframes["bias"] = fitsio.read(bias_)
     else:
         #MAKE MASTER BIAS
@@ -61,7 +61,7 @@ def create_calframes(files, params, verbose=False):
         del bias_frames
         
 
-    if verbose: print "Bias calibration frame is %s." % bias_  
+    if verbose: print("Bias calibration frame is %s." % bias_)
    
     #MAKE MASTER FLATS
     #prepare arrays for indexing 
@@ -76,7 +76,7 @@ def create_calframes(files, params, verbose=False):
         flat_ = join(outdir, "flat_%s.fits" % flt).replace(' ', '_')
 
         if exists(flat_):
-            print "Flat %s already exists, skipping creation." % flt
+            print("Flat %s already exists, skipping creation." % flt)
             calframes[flt] = fitsio.read(flat_)
 
         else: 
@@ -89,7 +89,7 @@ def create_calframes(files, params, verbose=False):
             fitsio.write(flat_, master_flat)
             calframes[flt] = master_flat
 
-        if verbose: print "Flat calibration frame is %s" % flat_
+        if verbose: print("Flat calibration frame is %s" % flat_)
 
     return calframes
 

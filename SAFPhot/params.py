@@ -69,15 +69,15 @@ def get_params():
     params["FLATID"] = "FLAT" # keyword to id FLAT frames
 
     #PLOT PARAMETERS
-    params["TARGET_OBJECT_NUM"] = 7         # target number from field image [int]
-    params["COMPARISON_OBJECT_NUMS"] = [1, 2, 5] # comparison numbers as list [int,int,..]
+    params["TARGET_OBJECT_NUM"] = 9         # target number from field image [int]
+    params["COMPARISON_OBJECT_NUMS"] = [2, 3, 6] # comparison numbers as list [int,int,..]
     params["NORM_FLUX_LIMITS"] = [None, None] # normalised flux limits as list [lower,upper]
     params["TIME_AXIS_LIMITS"] = [None, None] # time axis limits as list [lower,upper]
     params["PLOT_TIME_FORMAT"] = "JD"       # time format for plotting [JD,HJD,BJD]
     params["BINNING"] = 10*60               # bin time for flightcurves [seconds]
-    params["PREDICTED_INGRESS"] = 2457952.54 # in format of "PLOT_TIME_FORMAT"
-    params["PREDICTED_EGRESS"] = 2457952.62 # in format of "PLOT_TIME_FORMAT"
-    params["ACTUAL_INGRESS"] = 2457952.55   # in format of "PLOT_TIME_FORMAT"
+    params["PREDICTED_INGRESS"] = 2457951.38472 # in format of "PLOT_TIME_FORMAT"
+    params["PREDICTED_EGRESS"] =  2457951.47431 # in format of "PLOT_TIME_FORMAT"
+    params["ACTUAL_INGRESS"] = None   # in format of "PLOT_TIME_FORMAT"
     params["ACTUAL_EGRESS"] = None   # in format of "PLOT_TIME_FORMAT"
     params["NCOLS"] = 2                     # max number of plot columns per page [int]
     params["NROWS"] = 3                     # max number of plot rows per page [int]

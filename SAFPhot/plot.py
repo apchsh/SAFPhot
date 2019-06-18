@@ -25,6 +25,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from copy import copy
 from matplotlib.image import imread
 from shutil import copyfile
+from scipy.stats import mode
 #from scipy.stats import pearsonr
 
 warnings.simplefilter('ignore')
@@ -78,6 +79,7 @@ def rebin(a, *args):
     shape = a.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(args)
+    factor = factor.astype(int)
     evList = ['a.reshape('] + \
              ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
              [')'] + ['.sum(%d)'%(i+1) for i in range(lenShape)] + \
@@ -100,8 +102,8 @@ def air_corr(flux, xjd, xjd_oot_l=99, xjd_oot_u=99):
     flux_r /= p1
     return flux_r
 
-def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
-        xlim=[None, None], ylim=[None, None],
+def add_plot(x_in, y_in, bintime=0, ylabel=None, xoffset=0, s=10,
+        c='b', alpha=1.0, xlim=[None, None], ylim=[None, None],
         xlabel=None, plot_oot_l_p=False, plot_oot_u_p=False,
         plot_rms=False, rms_mask=None, inc=False, hold=False):
    
@@ -144,7 +146,11 @@ def add_plot(x_in, y_in, ylabel=None, xoffset=0, s=10, c='b', alpha=1.0,
     rms = (np.nanstd(y[mask], ddof=1) / np.nanmedian(y[mask]))
     
     #Data label
-    datalabel = 'RMS: %7.5f' % rms
+    bin_unit = "s"
+    if bintime > 60:
+        bintime /= 60
+        bin_unit = "min"
+    datalabel = 'RMS: %7.4f; %d %s' %(rms,bintime,bin_unit)
 
     #Plot
     axf[npp].scatter(x, y, label=datalabel, s=s, c=c, alpha=alpha)
@@ -289,7 +295,7 @@ if __name__ == "__main__":
     '''===== START OF INPUT PARAMETERS ======'''
     
     #Specify input-output directory
-    dir_ = args.dir_in
+    dir_ = join(args.dir_in, p.phot_dir)
     
     #Specify input photometry file name
     infile_list = glob(join(dir_, p.phot_file_in))
@@ -370,8 +376,8 @@ if __name__ == "__main__":
     global filterb; filterb, _, _ = hdr['FILTERB'].strip().partition(' - ')
     
     #Screen print
-    print "\nPlotting photometry for: %s %s %s %s %s" %(target_name, observat,
-            telescop, instrumt, filtera)
+    print("\nPlotting photometry for: %s %s %s %s %s" %(target_name, observat,
+            telescop, instrumt, filtera))
 
     #Create dictionary for header of output FITS
     header_dic = {'TARGET': target_name,
@@ -442,7 +448,7 @@ if __name__ == "__main__":
             "rad: {:.1f} pix; bkg params: {}".format(np.nanmax((signal/noise)[:,:]),
             apps[sn_max_a], bkgs[sn_max_b]))
     '''
-    print ("Max S/N with lowest bkg residuals: "\
+    print("Max S/N with lowest bkg residuals: "\
             "{:.2f}; aperture rad: {:.1f} pix; bkg params: {}".format(
                 np.nanmax((signal/noise)[:,lowest_bkg]),
                 apps[sn_max_bkg_a],bkgs[sn_max_bkg_b]))
@@ -462,7 +468,8 @@ if __name__ == "__main__":
     
     #Plot differential photometry using comparison ensemble
     add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
-        'Rel. flux (ensemble)', xoffset=xjd_off, xlabel=plot_time_format,
+        ylabel='Rel. flux (ensemble)', bintime=(mode(exp)[0][0]),
+        xoffset=xjd_off, xlabel=plot_time_format,
         plot_oot_l_p=True, plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
         xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
     
@@ -475,10 +482,10 @@ if __name__ == "__main__":
     fwhm_bin = bin_to_size(fwhm[sn_max_bkg_b,:], binning, block_exp_t, block_ind_bound,
             finite_mask)
     norm_mask_bin = bin_to_size(norm_mask, binning, block_exp_t, block_ind_bound,
-            finite_mask)
+            finite_mask).astype(bool)
 
     #plot Binned differential photometry using comparison ensemble
-    add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+    add_plot(xjd_bin, flux_bin, bintime=binning, xoffset=xjd_off,
         plot_rms=True, rms_mask=norm_mask_bin, xlim=time_axis_limits,
         ylim=norm_flux_limits, c='r', inc=True, hold=True)
     
@@ -535,8 +542,8 @@ if __name__ == "__main__":
     
         #Plot differential photometry using individual comparisons
         add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
-            'Rel. flux (comp. %d)' %cindex, xoffset=xjd_off,
-            xlabel=plot_time_format, plot_oot_l_p=True,
+            ylabel='Rel. flux (comp. %d)' %cindex, bintime=(mode(exp)[0][0]),
+            xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
             plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
             xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
         
@@ -547,9 +554,9 @@ if __name__ == "__main__":
         xjd_bin = bin_to_size(xjd, binning, block_exp_t, block_ind_bound,
                 finite_mask)
         norm_mask_bin = bin_to_size(norm_mask, binning, block_exp_t, block_ind_bound,
-                finite_mask)
+                finite_mask).astype(bool)
         #Plot binned photometry using individual comparisons
-        add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+        add_plot(xjd_bin, flux_bin, bintime=binning, xoffset=xjd_off,
             plot_rms=True, rms_mask=norm_mask_bin, xlim=time_axis_limits, 
             ylim=norm_flux_limits, c='r', inc=True, hold=True)
         
@@ -583,10 +590,10 @@ if __name__ == "__main__":
         
             #Plot differential photometry using individual comparisons
             add_plot(xjd, diff_flux_other[sn_max_bkg_a,sn_max_bkg_b,:],
-                'Resid. (comp. %d)' %cindex, xoffset=xjd_off, 
-                xlabel=plot_time_format, plot_oot_l_p=True, plot_oot_u_p=True,
-                plot_rms=True, xlim=time_axis_limits, ylim=norm_flux_limits, 
-                alpha=0.5, inc=False)
+                ylabel='Resid. (comp. %d)' %cindex, bintime=(mode(exp)[0][0]),
+                xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
+                plot_oot_u_p=True, plot_rms=True, xlim=time_axis_limits,
+                ylim=norm_flux_limits, alpha=0.5, inc=False)
             
             #Bin data
             finite_mask = np.isfinite(diff_flux_other[sn_max_bkg_a, sn_max_bkg_b, :])
@@ -596,7 +603,7 @@ if __name__ == "__main__":
                     finite_mask)
             
             #Plot differential photometry of comparison vs comparison residuals
-            add_plot(xjd_bin, flux_bin, xoffset=xjd_off,
+            add_plot(xjd_bin, flux_bin, bintime=binning, xoffset=xjd_off,
                 plot_rms=True, xlim=time_axis_limits, ylim=norm_flux_limits,
                 c='r', inc=True, hold=True)
     
@@ -613,4 +620,4 @@ if __name__ == "__main__":
     #Copy params script to dir_
     copyfile(join(dirname(__file__), 'params.py'), join(dir_, 'params.py'))
 
-    print "Plotting complete"
+    print("Plotting complete")

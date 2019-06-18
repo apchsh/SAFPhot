@@ -98,7 +98,7 @@ def unpack_reduce(files, calframes, params, verbose=True):
     for file_, target, filt in zip(files.target, files.target_name,
             files.target_filter):    
 
-        if verbose: print "Unpacking %s: %s " % (target, file_)
+        if verbose: print("Unpacking %s: %s " % (target, file_))
 
         #Create directory within reduction subfolder
         outdir = join(master_outdir, target)
@@ -109,7 +109,7 @@ def unpack_reduce(files, calframes, params, verbose=True):
 
         if not exists(outdir): 
             makedirs(outdir)
-            if verbose: print "%s folder created." % outdir
+            if verbose: print("%s folder created." % outdir)
             
         #Open master files
         f = fits.open(file_) 
@@ -155,6 +155,7 @@ def unpack_reduce(files, calframes, params, verbose=True):
 
             else: count_skip += 1
 
-        if count_skip > 0: print "%i files skipped because they already exist." % count_skip
+        if count_skip > 0: print("%i files skipped because they already exist."
+                % count_skip)
 
-    print "Reduction and unpacking complete." 
+    print("Reduction and unpacking complete.")

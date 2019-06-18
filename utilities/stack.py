@@ -56,7 +56,7 @@ if __name__ == '__main__':
         up_index = i + num
         data = 0.        
         prihdr = fits.open(file_list[0])[0].header
-        print stack_count
+        print(stack_count)
 
         for count, file_ in enumerate(file_list[i:up_index]):
         

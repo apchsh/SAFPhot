@@ -73,9 +73,9 @@ if __name__ == '__main__':
         
             for item in dirs:
 
-                print "Processing frames for photometry on %s" % item 
+                print("Processing frames for photometry on %s" % item) 
                 ph.run_phot(args.dir_in, pattern, par, item)
 
     if args.mode not in ('both', 'reduction', 'photometry'):
 
-        print 'Please specify SAFPhot run mode: [reduction, photometry, both]'
+        print('Please specify SAFPhot run mode: [reduction, photometry, both]')

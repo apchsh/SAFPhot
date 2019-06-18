@@ -73,7 +73,7 @@ Quickstart
 4. To analyse the photometry, view the field PNG image in the photometry sub
    directory to assertain the object numbers of the taget and comparison stars. Update the 'TARGET_OBJECT_NUM', 'COMPARISON_OBJECT_NUMS', and other relevant keywords in the 'PLOT PARAMETERS' section of the 'params.py' file. Run::
 
-        plot.py {path/to/data/photometry/dir/}
+        plot.py {path/to/data/dir/}
 
 
 
@@ -99,7 +99,7 @@ Once the pipeline has finished running there will be three new folders in the da
 
 To analyse the photometry, run::
 
-    python plot.py path/to/data/photometry/dir/
+    python plot.py path/to/data/dir/
 
 NOTES
 (1) params.py and validate.py must be present in the same directory as plot.py
