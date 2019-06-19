@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
   name = 'safphot',
   packages=find_packages(exclude=['*.pyc', 'utilities']),
-  version = '0.1.3',
+  version = '0.1.4',
   description = 'Reduction and photometry pipeline for SAAO small telescopes',
   long_description = 'Reduction and photometry pipeline for SAAO small telescopes',
   author = 'Alexander Chaushev, Liam Raynard',
@@ -19,6 +19,7 @@ setup(
   classifiers = [
        'Development Status :: 3 - Alpha',
        'Programming Language :: Python :: 2.7',
+       'Programming Language :: Python :: 3.7',
    ],
   include_package_data=True,
   )

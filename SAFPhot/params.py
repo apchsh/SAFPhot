@@ -47,14 +47,14 @@ def get_params():
     params["OBSTYPE"] = "OBSTYPE" #keyword for observation type
     
     #Setting optional
-    params["ANALYSER"] = "CHAUSHEV" # Person who analysed the data
+    params["ANALYSER"] = "RAYNARD" # Person who analysed the data
     params["EQUINOX"] = "OBJEQUIN" # Equinox of target coordinates
     params["AIRMASS"] = "AIRMASS" # Airmass during observation
     params["HJD"] = "HJD" # Heliocentric Julian Date
     params["BJD"] = "BJD" # Barycentric Julian Date
-    params["LAT"] = 0.334 # latitude of telescope in Earth geodetic co-ords
-    params["LON"] = 0.334 # longitude of telescope in Earth geodetic co-ords
-    params["ALT"] = 300.0 # Altitude of telescope [meters]
+    params["LAT"] = -32.375823 # latitude of telescope in Earth geodetic co-ords
+    params["LON"] = 20.810808 # longitude of telescope in Earth geodetic co-ords
+    params["ALT"] = 1798.0 # Altitude of telescope [meters]
 
     #REDUCTION AND PHOTOMETRY OUTPUT KEYWORDS 
     params["OUT_DIR"] = "" # output directory, if blank the input dir is used 
@@ -69,16 +69,18 @@ def get_params():
     params["FLATID"] = "FLAT" # keyword to id FLAT frames
 
     #PLOT PARAMETERS
-    params["TARGET_OBJECT_NUM"] = 9         # target number from field image [int]
-    params["COMPARISON_OBJECT_NUMS"] = [2, 3, 6] # comparison numbers as list [int,int,..]
+    params["TARGET_OBJECT_NUM"] = 3         # target number from field image [int]
+    params["COMPARISON_OBJECT_NUMS"] = [0,1,2,5] # comparison numbers as list [int,int,..]
     params["NORM_FLUX_LIMITS"] = [None, None] # normalised flux limits as list [lower,upper]
     params["TIME_AXIS_LIMITS"] = [None, None] # time axis limits as list [lower,upper]
     params["PLOT_TIME_FORMAT"] = "JD"       # time format for plotting [JD,HJD,BJD]
     params["BINNING"] = 10*60               # bin time for flightcurves [seconds]
-    params["PREDICTED_INGRESS"] = 2457951.38472 # in format of "PLOT_TIME_FORMAT"
-    params["PREDICTED_EGRESS"] =  2457951.47431 # in format of "PLOT_TIME_FORMAT"
+    params["PREDICTED_INGRESS"] = None # in format of "PLOT_TIME_FORMAT"
+    params["PREDICTED_EGRESS"] =  None # in format of "PLOT_TIME_FORMAT"
     params["ACTUAL_INGRESS"] = None   # in format of "PLOT_TIME_FORMAT"
-    params["ACTUAL_EGRESS"] = None   # in format of "PLOT_TIME_FORMAT"
+    params["ACTUAL_EGRESS"] = None  # in format of "PLOT_TIME_FORMAT"
+    params["PLOT_ACTUAL_INGRESS"] = True # plot line at actual ingress
+    params["PLOT_ACTUAL_EGRESS"] = True # plot line at actual egress
     params["NCOLS"] = 2                     # max number of plot columns per page [int]
     params["NROWS"] = 3                     # max number of plot rows per page [int]
     params["FIGSIZE"] = (12,8)              # figure size in inches as tuple: (width,height)

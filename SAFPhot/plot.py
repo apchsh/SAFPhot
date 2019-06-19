@@ -104,7 +104,8 @@ def air_corr(flux, xjd, xjd_oot_l=99, xjd_oot_u=99):
 
 def add_plot(x_in, y_in, bintime=0, ylabel=None, xoffset=0, s=10,
         c='b', alpha=1.0, xlim=[None, None], ylim=[None, None],
-        xlabel=None, plot_oot_l_p=False, plot_oot_u_p=False,
+        xlabel=None, plot_oot_l=False, plot_oot_u=False,
+        plot_oot_l_p=False, plot_oot_u_p=False,
         plot_rms=False, rms_mask=None, inc=False, hold=False):
    
     #Retrieve global variables
@@ -170,9 +171,13 @@ def add_plot(x_in, y_in, bintime=0, ylabel=None, xoffset=0, s=10,
 
     #X lines
     if (xjd_oot_l_p is not None) and (plot_oot_l_p is True):
-        axf[npp].axvline(x=xjd_oot_l_p - xoffset, c='g')
+        axf[npp].axvline(x=xjd_oot_l_p - xoffset, c='g', linestyle="--")
     if (xjd_oot_u_p is not None) and (plot_oot_u_p is True):
-        axf[npp].axvline(x=xjd_oot_u_p - xoffset, c='g')
+        axf[npp].axvline(x=xjd_oot_u_p - xoffset, c='g', linestyle="--")
+    if (xjd_oot_l is not None) and (plot_oot_l is True):
+        axf[npp].axvline(x=xjd_oot_l - xoffset, c='g')
+    if (xjd_oot_u is not None) and (plot_oot_u is True):
+        axf[npp].axvline(x=xjd_oot_u - xoffset, c='g')
     
     #Increment plot counter
     if inc is True:
@@ -470,7 +475,8 @@ if __name__ == "__main__":
     add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
         ylabel='Rel. flux (ensemble)', bintime=(mode(exp)[0][0]),
         xoffset=xjd_off, xlabel=plot_time_format,
-        plot_oot_l_p=True, plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
+        plot_oot_l=True, plot_oot_u=True, plot_oot_l_p=True, plot_oot_u_p=True,
+        plot_rms=True, rms_mask=norm_mask,
         xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
     
     #Bin data
@@ -543,7 +549,9 @@ if __name__ == "__main__":
         #Plot differential photometry using individual comparisons
         add_plot(xjd, diff_flux[sn_max_bkg_a,sn_max_bkg_b,:],
             ylabel='Rel. flux (comp. %d)' %cindex, bintime=(mode(exp)[0][0]),
-            xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
+            xoffset=xjd_off, xlabel=plot_time_format,
+            plot_oot_l=p.plot_actual_ingress,
+            plot_oot_u=p.plot_actual_egress, plot_oot_l_p=True,
             plot_oot_u_p=True, plot_rms=True, rms_mask=norm_mask,
             xlim=time_axis_limits, ylim=norm_flux_limits, alpha=0.5, inc=False)
         
@@ -571,7 +579,7 @@ if __name__ == "__main__":
         save_data_fits(updated_table, outfile_fits, cindex)
         
 
-        '''EACH COMPARISON VS MEAN OF OTHER COMPARISONS'''
+        '''RESIDUALS: EACH COMPARISON VS MEAN OF OTHER COMPARISONS'''
         #Get diff flux of comparison with mean of other comparisons
         if (len(c_num) > 1):
             comp_mask = np.not_equal(c_num, [cindex]*len(c_num))
@@ -588,11 +596,11 @@ if __name__ == "__main__":
             sn_max_bkg_a, sn_max_bkg_b = get_sn_max(sn_max_bkg)
             
         
-            #Plot differential photometry using individual comparisons
+            #Plot differential photometry of comparison vs mean of others
             add_plot(xjd, diff_flux_other[sn_max_bkg_a,sn_max_bkg_b,:],
                 ylabel='Resid. (comp. %d)' %cindex, bintime=(mode(exp)[0][0]),
-                xoffset=xjd_off, xlabel=plot_time_format, plot_oot_l_p=True,
-                plot_oot_u_p=True, plot_rms=True, xlim=time_axis_limits,
+                xoffset=xjd_off, xlabel=plot_time_format,
+                plot_rms=True, xlim=time_axis_limits,
                 ylim=norm_flux_limits, alpha=0.5, inc=False)
             
             #Bin data
@@ -602,7 +610,7 @@ if __name__ == "__main__":
             xjd_bin = bin_to_size(xjd, binning, block_exp_t, block_ind_bound,
                     finite_mask)
             
-            #Plot differential photometry of comparison vs comparison residuals
+            #Plot binned diff. photometry of comparison vs mean of others
             add_plot(xjd_bin, flux_bin, bintime=binning, xoffset=xjd_off,
                 plot_rms=True, xlim=time_axis_limits, ylim=norm_flux_limits,
                 c='r', inc=True, hold=True)

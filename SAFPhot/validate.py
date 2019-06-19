@@ -25,6 +25,12 @@ class KeyValueError(Exception):
     pass 
 
 #Functions to validate the keywords 
+def check_bool(num):
+    if type(num) == bool:
+        return True
+    else:
+        return False
+
 def tuple_two(num):
     
     if type(num) == tuple:
@@ -164,6 +170,8 @@ class Validator(object):
                 "PREDICTED_EGRESS":float_positive_or_none,
                 "ACTUAL_INGRESS":float_positive_or_none,
                 "ACTUAL_EGRESS":float_positive_or_none,
+                "PLOT_ACTUAL_INGRESS":check_bool,
+                "PLOT_ACTUAL_EGRESS":check_bool,
                 "NCOLS":int_positive,
                 "NROWS":int_positive,
                 "FIGSIZE":tuple_two,

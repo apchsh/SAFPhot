@@ -125,6 +125,7 @@ def unpack_reduce(files, calframes, params, verbose=True):
                     precision=7)
             dt_exp = TimeDelta(val=m.exposure, format='sec')
             cal_gps_time = (frame_time - dt_exp).isot[0]
+            m.dateobs = cal_gps_time
             prihdr['GPSSTART'] = cal_gps_time
         
         #Counter to track how many files were skipped
